@@ -15,6 +15,7 @@ class AppServiceProvider extends ServiceProvider
         Response::macro('api', function ($message ,$data, $status = 200) {
             return Response::json([
                 'status' => $status,
+                'message' => $message,
                 'data' => $data,
             ], $status);
         });
