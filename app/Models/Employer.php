@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class Employer extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'name',
         'email',
@@ -16,12 +19,16 @@ class Employer extends Model
         'gender',
         'status',
     ];
+
+    public array $translatable = ['name', 'company', 'address'];
+
     public function countries()
     {
         return $this->hasOne(Country::class);
     }
+
     public function subscriptions()
-{
-    return $this->morphMany(Subscription::class, 'subscribable');
-}
+    {
+        return $this->morphMany(Subscription::class, 'subscribable');
+    }
 }

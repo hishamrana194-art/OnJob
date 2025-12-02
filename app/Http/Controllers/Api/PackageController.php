@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePackageRequest;
 use App\Http\Requests\UpdatePackageRequest;
+use App\Http\Resources\PackageResource;
 use App\Models\Package;
-use Illuminate\Http\Request;
 
 class PackageController extends Controller
 {
@@ -18,7 +18,7 @@ class PackageController extends Controller
         $packages = Package::all();
         return response()->api(
             'Packages retrieved successfully',
-            $packages,
+            PackageResource::collection($packages),
             200
         );
     }
@@ -31,7 +31,7 @@ class PackageController extends Controller
         $package = Package::create($request->validated());
         return response()->api(
             'Package created successfully',
-            $package,
+            new PackageResource($package),
             201
         );
     }
@@ -41,10 +41,10 @@ class PackageController extends Controller
      */
     public function show(string $id)
     {
-        $package = Package::findorFail($id);
+        $package = Package::findOrFail($id);
         return response()->api(
             'Package retrieved successfully',
-            $package,
+            new PackageResource($package),
             200
         );
     }
@@ -54,11 +54,11 @@ class PackageController extends Controller
      */
     public function update(UpdatePackageRequest $request, string $id)
     {
-        $package = Package::findorFail($id);
+        $package = Package::findOrFail($id);
         $package->update($request->validated());
         return response()->api(
             'Package updated successfully',
-            $package,
+            new PackageResource($package),
             200
         );
     }
@@ -68,7 +68,7 @@ class PackageController extends Controller
      */
     public function destroy(string $id)
     {
-        $package = Package::findorFail($id);
+        $package = Package::findOrFail($id);
         $package->delete();
         return response()->api(
             'Package deleted successfully',

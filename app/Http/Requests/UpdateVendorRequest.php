@@ -22,7 +22,9 @@ class UpdateVendorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
+            'name' => 'sometimes|array',
+            'name.en' => 'sometimes|string|max:255',
+            'name.ar' => 'sometimes|string|max:255',
             'website' => 'sometimes|url',
             'phone_number' => 'sometimes|string|regex:/^[0-9]+$/|max:20',
             'status' => 'sometimes|boolean',

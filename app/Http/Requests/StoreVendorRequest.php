@@ -22,7 +22,9 @@ class StoreVendorRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|array',
+            'name.en' => 'required|string|max:255',
+            'name.ar' => 'required|string|max:255',
             'website' => 'required|url',
             'email' => 'required|email|unique:vendors',
             'phone_number' => 'required|string|regex:/^[0-9]+$/|max:20',

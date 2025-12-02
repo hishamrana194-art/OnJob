@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Translatable\HasTranslations;
 
 class Vendor extends Model
 {
+    use HasTranslations;
+
     protected $fillable = [
         'name',
         'website',
@@ -13,8 +16,11 @@ class Vendor extends Model
         'phone_number',
         'status',
     ];
-public function subscriptions()
-{
-    return $this->morphMany(Subscription::class, 'subscribable');
-}
+
+    public array $translatable = ['name'];
+
+    public function subscriptions()
+    {
+        return $this->morphMany(Subscription::class, 'subscribable');
+    }
 }

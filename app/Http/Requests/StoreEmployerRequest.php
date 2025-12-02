@@ -22,12 +22,18 @@ class StoreEmployerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|array',
+            'name.en' => 'required|string|max:255',
+            'name.ar' => 'required|string|max:255',
             'email' => 'required|email|unique:employers',
             'country_id' => 'required|exists:countries,id',
             'phone_number' => 'required|string|regex:/^[0-9]+$/|max:20',
-            'company' => 'required|string|max:255',
-            'address' => 'required|string|max:500',
+            'company' => 'required|array',
+            'company.en' => 'required|string|max:255',
+            'company.ar' => 'required|string|max:255',
+            'address' => 'required|array',
+            'address.en' => 'required|string|max:500',
+            'address.ar' => 'required|string|max:500',
             'gender' => 'required|in:male,female',
             'status' => 'required|boolean',
         ];

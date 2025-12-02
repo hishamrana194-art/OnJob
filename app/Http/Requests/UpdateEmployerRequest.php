@@ -22,11 +22,17 @@ class UpdateEmployerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'sometimes|string|max:255',
+            'name' => 'sometimes|array',
+            'name.en' => 'sometimes|string|max:255',
+            'name.ar' => 'sometimes|string|max:255',
             'country_id' => 'sometimes|exists:countries,id',
-            'phone_number' => 'required|string|regex:/^[0-9]+$/|max:20',
-            'company' => 'sometimes|string|max:255',
-            'address' => 'sometimes|string|max:500',
+            'phone_number' => 'sometimes|string|regex:/^[0-9]+$/|max:20',
+            'company' => 'sometimes|array',
+            'company.en' => 'sometimes|string|max:255',
+            'company.ar' => 'sometimes|string|max:255',
+            'address' => 'sometimes|array',
+            'address.en' => 'sometimes|string|max:500',
+            'address.ar' => 'sometimes|string|max:500',
             'gender' => 'sometimes|in:male,female',
             'status' => 'sometimes|boolean',
         ];

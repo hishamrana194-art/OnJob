@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuthAdminController;
+use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\EmployerController;
 use App\Http\Controllers\Api\PackageController;
 use App\Http\Controllers\Api\SubscriptionController;
@@ -18,8 +19,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
-
-
 });
 
 // ========================
@@ -34,7 +33,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin', [AuthAdminController::class, 'admin']);
 });
 
-
+// ========================
+// API Resources
+// ========================
+Route::apiResource('/countries', CountryController::class);
 Route::apiResource('/employers', EmployerController::class);
 Route::apiResource('/vendors', VendorController::class);
 Route::apiResource('/packages', PackageController::class);

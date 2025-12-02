@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSubscriptionRequest;
 use App\Http\Requests\UpdateSubscriptionRequest;
+use App\Http\Resources\SubscriptionResource;
 use App\Models\Subscription;
-use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
@@ -15,10 +15,10 @@ class SubscriptionController extends Controller
      */
     public function index()
     {
-        $subscriptions = Subscription::all();
+        $subscriptions = Subscription::with(['subscribable', 'package'])->get();
         return response()->api(
             'Subscriptions retrieved successfully',
-            $subscriptions,
+            SubscriptionResource::collection($subscriptions),
             200
         );
     }
@@ -31,7 +31,7 @@ class SubscriptionController extends Controller
         $subscription = Subscription::create($request->validated());
         return response()->api(
             'Subscription created successfully',
-            $subscription,
+            new SubscriptionResource($subscription->load(['subscribable', 'package'])),
             201
         );
     }
@@ -41,10 +41,10 @@ class SubscriptionController extends Controller
      */
     public function show(string $id)
     {
-        $subscription = Subscription::findorFail($id);
+        $subscription = Subscription::with(['subscribable', 'package'])->findOrFail($id);
         return response()->api(
             'Subscription retrieved successfully',
-            $subscription,
+            new SubscriptionResource($subscription),
             200
         );
     }
@@ -52,13 +52,13 @@ class SubscriptionController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update( UpdateSubscriptionRequest $request, string $id)
+    public function update(UpdateSubscriptionRequest $request, string $id)
     {
-        $subscription = Subscription::findorFail($id);
+        $subscription = Subscription::findOrFail($id);
         $subscription->update($request->validated());
         return response()->api(
             'Subscription updated successfully',
-            $subscription,
+            new SubscriptionResource($subscription->load(['subscribable', 'package'])),
             200
         );
     }
@@ -68,7 +68,7 @@ class SubscriptionController extends Controller
      */
     public function destroy(string $id)
     {
-        $subscription = Subscription::findorFail($id);
+        $subscription = Subscription::findOrFail($id);
         $subscription->delete();
         return response()->api(
             'Subscription deleted successfully',

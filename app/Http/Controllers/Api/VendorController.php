@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVendorRequest;
 use App\Http\Requests\UpdateVendorRequest;
+use App\Http\Resources\VendorResource;
 use App\Models\Vendor;
-use Illuminate\Http\Request;
 
 class VendorController extends Controller
 {
@@ -15,12 +15,12 @@ class VendorController extends Controller
      */
     public function index()
     {
-     $vendors = Vendor::all();
-     return response()->api(['message' =>
-        'Vendors retrieved successfully'],
-        $vendors,
-        200
-    );
+        $vendors = Vendor::all();
+        return response()->api(
+            'Vendors retrieved successfully',
+            VendorResource::collection($vendors),
+            200
+        );
     }
 
     /**
@@ -31,7 +31,7 @@ class VendorController extends Controller
         $vendor = Vendor::create($request->validated());
         return response()->api(
             'Vendor created successfully',
-            $vendor,
+            new VendorResource($vendor),
             201
         );
     }
@@ -41,10 +41,10 @@ class VendorController extends Controller
      */
     public function show(string $id)
     {
-        $vendor = Vendor::findorFail($id);
+        $vendor = Vendor::findOrFail($id);
         return response()->api(
             'Vendor retrieved successfully',
-            $vendor,
+            new VendorResource($vendor),
             200
         );
     }
@@ -54,11 +54,11 @@ class VendorController extends Controller
      */
     public function update(UpdateVendorRequest $request, string $id)
     {
-        $vendor = Vendor::findorFail($id);
+        $vendor = Vendor::findOrFail($id);
         $vendor->update($request->validated());
         return response()->api(
             'Vendor updated successfully',
-            $vendor,
+            new VendorResource($vendor),
             200
         );
     }
@@ -68,7 +68,7 @@ class VendorController extends Controller
      */
     public function destroy(string $id)
     {
-        $vendor = Vendor::findorFail($id);
+        $vendor = Vendor::findOrFail($id);
         $vendor->delete();
         return response()->api(
             'Vendor deleted successfully',

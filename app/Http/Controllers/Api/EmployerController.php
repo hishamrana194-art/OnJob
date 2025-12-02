@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployerRequest;
 use App\Http\Requests\UpdateEmployerRequest;
+use App\Http\Resources\EmployerResource;
 use App\Models\Employer;
 use Illuminate\Http\Request;
 
@@ -15,10 +16,10 @@ class EmployerController extends Controller
      */
     public function index()
     {
-        $employers = Employer::all();
+        $employers = Employer::with('country')->get();
         return response()->api(
             'Employers retrieved successfully',
-            $employers,
+            EmployerResource::collection($employers),
             200
         );
     }
@@ -26,14 +27,14 @@ class EmployerController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store( StoreEmployerRequest $request)
+    public function store(StoreEmployerRequest $request)
     {
-     $employer = Employer::create($request->validated());
-     return response()->api(
-        'Employer created successfully',
-        $employer,
-        201
-    );
+        $employer = Employer::create($request->validated());
+        return response()->api(
+            'Employer created successfully',
+            new EmployerResource($employer),
+            201
+        );
     }
 
     /**
@@ -41,10 +42,10 @@ class EmployerController extends Controller
      */
     public function show(string $id)
     {
-        $employer = Employer::findorFail($id);
+        $employer = Employer::with('country')->findOrFail($id);
         return response()->api(
             'Employer retrieved successfully',
-            $employer,
+            new EmployerResource($employer),
             200
         );
     }
@@ -54,11 +55,11 @@ class EmployerController extends Controller
      */
     public function update(UpdateEmployerRequest $request, string $id)
     {
-        $employer = Employer::findorFail($id);
+        $employer = Employer::findOrFail($id);
         $employer->update($request->validated());
         return response()->api(
             'Employer updated successfully',
-            $employer,
+            new EmployerResource($employer),
             200
         );
     }
@@ -68,7 +69,7 @@ class EmployerController extends Controller
      */
     public function destroy(string $id)
     {
-        $employer = Employer::findorFail($id);
+        $employer = Employer::findOrFail($id);
         $employer->delete();
         return response()->api(
             'Employer deleted successfully',
