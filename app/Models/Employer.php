@@ -22,9 +22,9 @@ class Employer extends Model
 
     public array $translatable = ['name', 'company', 'address'];
 
-    public function countries()
+    public function country()
     {
-        return $this->hasOne(Country::class);
+        return $this->belongsTo(Country::class);
     }
 
     public function subscriptions()

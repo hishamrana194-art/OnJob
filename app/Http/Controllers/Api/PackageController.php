@@ -6,19 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StorePackageRequest;
 use App\Http\Requests\UpdatePackageRequest;
 use App\Http\Resources\PackageResource;
+use App\Http\Traits\Paginatable;
 use App\Models\Package;
+use Illuminate\Http\Request;
 
 class PackageController extends Controller
 {
+    use Paginatable;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $packages = Package::all();
+        $params = $this->getPaginationParams($request);
+
+        $packages = Package::latest()
+            ->paginate($params['per_page']);
+
         return response()->api(
             'Packages retrieved successfully',
-            PackageResource::collection($packages),
+            $this->paginationResponse($packages, PackageResource::class),
             200
         );
     }

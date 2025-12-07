@@ -6,19 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreSubscriptionRequest;
 use App\Http\Requests\UpdateSubscriptionRequest;
 use App\Http\Resources\SubscriptionResource;
+use App\Http\Traits\Paginatable;
 use App\Models\Subscription;
+use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
+    use Paginatable;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $subscriptions = Subscription::with(['subscribable', 'package'])->get();
+        $params = $this->getPaginationParams($request);
+
+        $subscriptions = Subscription::with(['subscribable', 'package'])
+            ->latest()
+            ->paginate($params['per_page']);
+
         return response()->api(
             'Subscriptions retrieved successfully',
-            SubscriptionResource::collection($subscriptions),
+            $this->paginationResponse($subscriptions, SubscriptionResource::class),
             200
         );
     }
