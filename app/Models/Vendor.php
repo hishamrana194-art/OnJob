@@ -15,6 +15,7 @@ class Vendor extends Model
         'email',
         'phone_number',
         'status',
+        
     ];
 
     public array $translatable = ['name'];
