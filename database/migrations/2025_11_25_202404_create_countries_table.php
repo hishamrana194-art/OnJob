@@ -14,8 +14,8 @@ public function up()
 {
     Schema::create('countries', function (Blueprint $table) {
         $table->id();
-        $table->string('name'); // اسم الدولة
-        $table->string('code')->nullable(); // كود الدولة مثل EG, US
+        $table->json('name'); // Translatable country name
+        $table->string('code', 3)->nullable(); // ISO country code
         $table->timestamps();
     });
 }

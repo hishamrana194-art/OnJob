@@ -24,4 +24,9 @@ class Vendor extends Model
     {
         return $this->morphMany(Subscription::class, 'subscribable');
     }
+
+    public function courses()
+    {
+        return $this->hasMany(Course::class);
+    }
 }

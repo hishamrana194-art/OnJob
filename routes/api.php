@@ -2,9 +2,15 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AuthAdminController;
+use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CountryController;
+use App\Http\Controllers\Api\CourseController;
 use App\Http\Controllers\Api\EmployerController;
+use App\Http\Controllers\Api\ModuleController;
+use App\Http\Controllers\Api\ModuleItemController;
 use App\Http\Controllers\Api\PackageController;
+use App\Http\Controllers\Api\QuestionController;
+use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\SubscriptionController;
 use App\Http\Controllers\Api\VendorController;
 use Illuminate\Support\Facades\Route;
@@ -41,4 +47,20 @@ Route::apiResource('/employers', EmployerController::class);
 Route::apiResource('/vendors', VendorController::class);
 Route::apiResource('/packages', PackageController::class);
 Route::apiResource('/subscriptions', SubscriptionController::class);
+
+// ========================
+// Courses & Learning Resources
+// ========================
+Route::apiResource('/categories', CategoryController::class);
+Route::apiResource('/courses', CourseController::class);
+Route::apiResource('/modules', ModuleController::class);
+Route::apiResource('/module-items', ModuleItemController::class);
+Route::apiResource('/quizzes', QuizController::class);
+Route::apiResource('/questions', QuestionController::class);
+
+// Nested routes for better organization
+Route::get('/courses/{course}/modules', [ModuleController::class, 'byCourse']);
+Route::get('/modules/{module}/items', [ModuleItemController::class, 'byModule']);
+Route::get('/courses/{course}/quizzes', [QuizController::class, 'byCourse']);
+Route::get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
 

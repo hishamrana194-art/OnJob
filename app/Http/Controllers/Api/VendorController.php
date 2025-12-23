@@ -6,19 +6,27 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreVendorRequest;
 use App\Http\Requests\UpdateVendorRequest;
 use App\Http\Resources\VendorResource;
+use App\Http\Traits\Paginatable;
 use App\Models\Vendor;
+use Illuminate\Http\Request;
 
 class VendorController extends Controller
 {
+    use Paginatable;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $vendors = Vendor::all();
+        $params = $this->getPaginationParams($request);
+
+        $vendors = Vendor::latest()
+            ->paginate($params['per_page']);
+
         return response()->api(
             'Vendors retrieved successfully',
-            VendorResource::collection($vendors),
+            $this->paginationResponse($vendors, VendorResource::class),
             200
         );
     }

@@ -6,20 +6,28 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployerRequest;
 use App\Http\Requests\UpdateEmployerRequest;
 use App\Http\Resources\EmployerResource;
+use App\Http\Traits\Paginatable;
 use App\Models\Employer;
 use Illuminate\Http\Request;
 
 class EmployerController extends Controller
 {
+    use Paginatable;
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $employers = Employer::with('country')->get();
+        $params = $this->getPaginationParams($request);
+
+        $employers = Employer::with('country')
+            ->latest()
+            ->paginate($params['per_page']);
+
         return response()->api(
             'Employers retrieved successfully',
-            EmployerResource::collection($employers),
+            $this->paginationResponse($employers, EmployerResource::class),
             200
         );
     }
