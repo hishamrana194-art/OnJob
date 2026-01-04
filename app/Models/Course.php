@@ -32,7 +32,6 @@ class Course extends Model
     {
         return $this->belongsTo(Vendor::class);
     }
-
     public function category()
     {
         return $this->belongsTo(Category::class);

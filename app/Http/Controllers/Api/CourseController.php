@@ -78,4 +78,3 @@ class CourseController extends Controller
         );
     }
 }
-
