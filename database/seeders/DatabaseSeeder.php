@@ -16,11 +16,18 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             CountriesSeeder::class,
 
+            // RBAC - Roles & Permissions
+            RoleSeeder::class,
+            PermissionSeeder::class,
+
             // Business entities
             VendorSeeder::class,
             EmployerSeeder::class,
             PackageSeeder::class,
             SubscriptionSeeder::class,
+
+            // Users
+            UserSeeder::class,
 
             // LMS data
             CategorySeeder::class,

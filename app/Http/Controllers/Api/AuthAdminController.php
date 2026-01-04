@@ -109,8 +109,27 @@ class AuthAdminController extends Controller
      */
     public function admin(Request $request)
     {
-    return response()->api('Admin retrieved successfully', $request->user('admin'), 200);
+        return response()->api('Admin retrieved successfully', $request->user('admin'), 200);
+    }
 
+    /**
+     * Get authenticated user (alias for admin method)
+     * Used by frontend UserForm.vue
+     */
+    public function me(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->api('Unauthenticated', null, 401);
+        }
+
+        // Load relationships if it's a User model
+        if ($user instanceof \App\Models\User) {
+            $user->load(['employer', 'vendor', 'roles']);
+        }
+
+        return response()->api('User retrieved successfully', $user, 200);
     }
 }
 

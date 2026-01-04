@@ -31,4 +31,23 @@ class Employer extends Model
     {
         return $this->morphMany(Subscription::class, 'subscribable');
     }
+
+    /**
+     * Get the active subscription
+     */
+    public function activeSubscription()
+    {
+        return $this->morphOne(Subscription::class, 'subscribable')
+            ->where('status', 'active')
+            ->where('ends_at', '>', now())
+            ->latest();
+    }
+
+    /**
+     * Get users belonging to this employer
+     */
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

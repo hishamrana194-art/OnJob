@@ -12,6 +12,9 @@ use App\Http\Controllers\Api\PackageController;
 use App\Http\Controllers\Api\QuestionController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\SubscriptionController;
+use App\Http\Controllers\Api\SuperAdminController;
+use App\Http\Controllers\Api\RegistrationController;
+use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VendorController;
 use Illuminate\Support\Facades\Route;
 
@@ -20,11 +23,21 @@ use Illuminate\Support\Facades\Route;
 // ========================
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+
+// ========================
+// Public Registration Routes
+// ========================
+Route::post('/register/employer', [RegistrationController::class, 'registerEmployer']);
+Route::post('/register/vendor', [RegistrationController::class, 'registerVendor']);
+Route::post('/verify-email', [RegistrationController::class, 'verifyEmail']);
+Route::post('/resend-verification', [RegistrationController::class, 'resendVerification']);
 
 // Protected User Routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
+    Route::get('/profile', [AuthController::class, 'profile']);
 });
 
 // ========================
@@ -37,6 +50,7 @@ Route::post('/admin/login', [AuthAdminController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/admin/logout', [AuthAdminController::class, 'logout']);
     Route::get('/admin', [AuthAdminController::class, 'admin']);
+    Route::get('/admin/me', [AuthAdminController::class, 'me']);
 });
 
 // ========================
@@ -47,6 +61,19 @@ Route::apiResource('/employers', EmployerController::class);
 Route::apiResource('/vendors', VendorController::class);
 Route::apiResource('/packages', PackageController::class);
 Route::apiResource('/subscriptions', SubscriptionController::class);
+
+// ========================
+// User Management (Protected)
+// ========================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('/users', UserController::class);
+    Route::post('/users/{id}/assign-role', [UserController::class, 'assignRole']);
+    Route::post('/users/{id}/remove-role', [UserController::class, 'removeRole']);
+    Route::get('/users/{id}/roles', [UserController::class, 'getUserRoles']);
+    Route::get('/users/{id}/permissions', [UserController::class, 'getUserPermissions']);
+    Route::post('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
+    Route::get('/my-subscription', [UserController::class, 'getMySubscription']);
+});
 
 // ========================
 // Courses & Learning Resources
@@ -63,4 +90,12 @@ Route::get('/courses/{course}/modules', [ModuleController::class, 'byCourse']);
 Route::get('/modules/{module}/items', [ModuleItemController::class, 'byModule']);
 Route::get('/courses/{course}/quizzes', [QuizController::class, 'byCourse']);
 Route::get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
+
+// ========================
+// Super Admin Routes (Protected - Admin only)
+// ========================
+Route::middleware('auth:sanctum')->prefix('super-admin')->group(function () {
+    Route::post('/employers/create-with-admin', [SuperAdminController::class, 'createEmployerWithAdmin']);
+    Route::post('/vendors/create-with-admin', [SuperAdminController::class, 'createVendorWithAdmin']);
+});
 
