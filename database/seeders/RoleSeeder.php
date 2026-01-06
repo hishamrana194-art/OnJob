@@ -13,34 +13,17 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $roles = [
-            [
-                'name' => 'employer_t1',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'employer_t2',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'employer_t3',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'employee',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'vendor_t1',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'vendor_admin',
-                'guard_name' => 'web',
-            ],
-            [
-                'name' => 'training_provider',
-                'guard_name' => 'web',
-            ],
+            // Employer roles
+            ['name' => 'employer_admin', 'guard_name' => 'web'],
+            ['name' => 'hr_manager', 'guard_name' => 'web'],
+            ['name' => 'department_manager', 'guard_name' => 'web'],
+            ['name' => 'team_leader', 'guard_name' => 'web'],
+            ['name' => 'employee', 'guard_name' => 'web'],
+            // Vendor roles
+            ['name' => 'vendor_admin', 'guard_name' => 'web'],
+            ['name' => 'vendor_editor', 'guard_name' => 'web'],
+            // Training Provider
+            ['name' => 'training_provider', 'guard_name' => 'web'],
         ];
 
         foreach ($roles as $role) {

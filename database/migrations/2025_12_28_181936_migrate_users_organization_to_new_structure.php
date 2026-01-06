@@ -45,9 +45,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Clear the user_type field
+        // Reset all users to default user_type (cannot be null due to NOT NULL constraint)
         DB::table('users')->update([
-            'user_type' => null,
+            'user_type' => 'employer_user',
         ]);
     }
 };
