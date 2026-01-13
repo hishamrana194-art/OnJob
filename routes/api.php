@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\AuthAdminController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CountryController;
 use App\Http\Controllers\Api\CourseController;
+use App\Http\Controllers\Api\CourseUserController;
 use App\Http\Controllers\Api\EmployerController;
 use App\Http\Controllers\Api\ModuleController;
 use App\Http\Controllers\Api\ModuleItemController;
@@ -24,6 +25,8 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+
+
 
 // ========================
 // Public Registration Routes
@@ -73,6 +76,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/{id}/permissions', [UserController::class, 'getUserPermissions']);
     Route::post('/users/{id}/toggle-status', [UserController::class, 'toggleStatus']);
     Route::get('/my-subscription', [UserController::class, 'getMySubscription']);
+    Route::get('/courseuser',[CourseUserController::class, 'getCoursesUser']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 });
 
 // ========================
@@ -84,6 +89,7 @@ Route::apiResource('/modules', ModuleController::class);
 Route::apiResource('/module-items', ModuleItemController::class);
 Route::apiResource('/quizzes', QuizController::class);
 Route::apiResource('/questions', QuestionController::class);
+
 
 // Nested routes for better organization
 Route::get('/courses/{course}/modules', [ModuleController::class, 'byCourse']);
@@ -97,5 +103,6 @@ Route::get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
 Route::middleware('auth:sanctum')->prefix('super-admin')->group(function () {
     Route::post('/employers/create-with-admin', [SuperAdminController::class, 'createEmployerWithAdmin']);
     Route::post('/vendors/create-with-admin', [SuperAdminController::class, 'createVendorWithAdmin']);
+
 });
 

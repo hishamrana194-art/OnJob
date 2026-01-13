@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Validator;
+use App\Mail\ResetPasswordMail;
+use Illuminate\Support\Facades\Mail;
+
 
 class AuthController extends Controller
 {
@@ -23,7 +26,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'organization_id' => 'nullable|exists:vendors,id',
+
             'locale' => 'nullable|in:en,ar',
         ]);
 
@@ -40,7 +43,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
-            'organization_id' => $request->organization_id,
+
             'locale' => $request->locale ?? 'en',
             'role' => 'employee', // Default role
             'is_active' => true,
@@ -54,7 +57,7 @@ class AuthController extends Controller
         return response()->api(
             'User registered successfully',
             [
-                'user' => new UserResource($user->load('organization', 'roles')),
+                'user' => new UserResource($user->load( 'roles')),
                 'access_token' => $token,
                 'token_type' => 'Bearer',
             ],
@@ -106,7 +109,7 @@ class AuthController extends Controller
         return response()->api(
             'Login successful',
             [
-                'user' => new UserResource($user->load('organization', 'roles')),
+
                 'access_token' => $token,
                 'token_type' => 'Bearer',
             ],
@@ -133,7 +136,7 @@ class AuthController extends Controller
      */
     public function profile(Request $request)
     {
-        $user = $request->user()->load('organization', 'roles', 'permissions');
+        $user = $request->user()->load( 'roles', 'permissions');
 
         return response()->api(
             'Profile retrieved successfully',
@@ -158,34 +161,42 @@ class AuthController extends Controller
      * Send password reset link
      */
     public function forgotPassword(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email|exists:users,email',
+{
+    $request->validate([
+        'email' => 'required|email|exists:users,email',
+    ]);
+
+    $user = \App\Models\User::where('email', $request->email)->first();
+
+    // نولد token جديد
+    $token = Password::createToken($user);
+
+    // نبعته بالإيميل
+    Mail::to($user->email)->send(new ResetPasswordMail($token, $user->email));
+
+    return response()->json([
+        'status' => true,
+        'message' => 'Password reset link sent to your email'
+    ]);
+}
+
+    public function changePassword(Request $request){
+        $user=auth()->user();
+        if (!$user || !Hash::check($request->oldpassword, $user->password)) {
+            return response()->api(
+                'Invalid credentials',
+                null,
+                401
+            );
+        }
+
+        $user->update([
+            'password' => bcrypt($request->newPassword)
         ]);
 
-        if ($validator->fails()) {
-            return response()->api(
-                'Validation failed',
-                ['errors' => $validator->errors()],
-                422
-            );
-        }
-
-        $status = Password::sendResetLink($request->only('email'));
-
-        if ($status === Password::RESET_LINK_SENT) {
-            return response()->api(
-                'Password reset link sent to your email',
-                null,
-                200
-            );
-        }
-
-        return response()->api(
-            'Unable to send reset link',
-            null,
-            500
-        );
     }
+
+
+
 }
 

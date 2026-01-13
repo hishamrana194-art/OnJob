@@ -46,8 +46,7 @@ class PermissionSeeder extends Seeder
             // Analytics
             'analytics.view',
 
-            // Organizations
-            'organizations.manage',
+
         ];
 
         // Create all permissions
@@ -113,7 +112,7 @@ class PermissionSeeder extends Seeder
                 'reports.view',
                 'reports.export',
                 'analytics.view',
-                'organizations.manage',
+                
             ],
 
             'training_provider' => [

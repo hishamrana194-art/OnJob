@@ -13,3 +13,4 @@ Route::get('/profile', function () {
 // Note: In production, you should add authentication or use the API routes instead
 Route::get('/profile/create', [ProfileController::class, 'create'])->name('profile.create');
 Route::post('/profile/store', [ProfileController::class, 'store'])->name('profile.store');
+

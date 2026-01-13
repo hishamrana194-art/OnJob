@@ -229,4 +229,5 @@ class User extends Authenticatable
     {
         $this->increment('points', $points);
     }
+    
 }

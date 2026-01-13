@@ -60,5 +60,11 @@ class Course extends Model
     {
         return $this->modules->count();
     }
+    public function users()
+{
+    return $this->belongsToMany(User::class)
+        ->withTimestamps();
+}
+
 }
 

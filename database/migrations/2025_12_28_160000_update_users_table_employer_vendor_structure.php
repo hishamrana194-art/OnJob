@@ -22,14 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('vendor_id')->nullable()->after('employer_id');
         });
 
-        // Drop old organization_id foreign key and column
-        Schema::table('users', function (Blueprint $table) {
-            if (Schema::hasColumn('users', 'organization_id')) {
-                $table->dropForeign(['organization_id']);
-                $table->dropIndex(['organization_id']);
-                $table->dropColumn('organization_id');
-            }
-        });
+
 
         // Update role enum with new values
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM(
@@ -85,11 +78,7 @@ return new class extends Migration
             $table->dropColumn(['user_type', 'employer_id', 'vendor_id']);
         });
 
-        // Restore organization_id
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('organization_id')->nullable()->after('avatar')->constrained('vendors')->nullOnDelete();
-            $table->index('organization_id');
-        });
+        
 
         // Restore old role enum
         DB::statement("ALTER TABLE users MODIFY COLUMN role ENUM(
