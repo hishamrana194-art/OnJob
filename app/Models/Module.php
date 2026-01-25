@@ -26,7 +26,7 @@ class Module extends Model
 
     public function course()
     {
-        return $this->belongsTo(Course::class);
+        return $this->belongsTo(Course::class)->withDefault();
     }
 
     public function items()
@@ -34,16 +34,23 @@ class Module extends Model
         return $this->hasMany(ModuleItem::class)->orderBy('order');
     }
 
-    // Get total duration of all items in this module
+    public function userProgress()
+    {
+        return $this->hasMany(UserModuleProgress::class, 'module_id', 'id');
+    }
+
     public function getTotalDurationAttribute()
     {
         return $this->items->sum('duration');
     }
 
-    // Get items count
     public function getItemsCountAttribute()
     {
         return $this->items->count();
     }
+    public function module()
+{
+    return $this->belongsTo(Module::class)->withDefault(); // لو الموديول محذوف، يرجع قيمة افتراضية بدل الوقوع
 }
 
+}

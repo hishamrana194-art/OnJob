@@ -96,4 +96,3 @@ class ModuleController extends Controller
         );
     }
 }
-

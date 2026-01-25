@@ -34,7 +34,6 @@ class ModuleItemController extends Controller
     {
         $data = $request->validated();
 
-        // Handle file upload
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $folder = $data['type'] === 'video' ? 'videos' : 'documents';
@@ -42,7 +41,6 @@ class ModuleItemController extends Controller
             $data['file_url'] = Storage::url($path);
         }
 
-        // Parse JSON fields if they come as strings
         if (isset($data['title']) && is_string($data['title'])) {
             $data['title'] = json_decode($data['title'], true);
         }
@@ -76,21 +74,17 @@ class ModuleItemController extends Controller
         $item = ModuleItem::findOrFail($id);
         $data = $request->validated();
 
-        // Handle file upload
         if ($request->hasFile('file')) {
-            // Delete old file if exists
             if ($item->file_url) {
                 $oldPath = str_replace('/storage/', '', $item->file_url);
                 Storage::disk('public')->delete($oldPath);
             }
-
             $file = $request->file('file');
             $folder = ($data['type'] ?? $item->type) === 'video' ? 'videos' : 'documents';
             $path = $file->store("module-items/{$folder}", 'public');
             $data['file_url'] = Storage::url($path);
         }
 
-        // Parse JSON fields if they come as strings
         if (isset($data['title']) && is_string($data['title'])) {
             $data['title'] = json_decode($data['title'], true);
         }
@@ -119,7 +113,6 @@ class ModuleItemController extends Controller
         );
     }
 
-    // Get items by module
     public function byModule(Request $request, string $moduleId)
     {
         $params = $this->getPaginationParams($request);
@@ -136,4 +129,3 @@ class ModuleItemController extends Controller
         );
     }
 }
-

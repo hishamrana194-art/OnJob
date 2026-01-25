@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\UserModuleProgress;
+use App\Models\UserModuleItemProgress;
+
+class UserModuleProgressController extends Controller
+{
+    // 1️⃣ Start a module
+    public function startModule(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'module_id' => 'required|exists:modules,id',
+            'course_id' => 'required|exists:courses,id',
+        ]);
+
+        $progress = UserModuleProgress::firstOrCreate(
+            [
+                'user_id' => $user->id,
+                'module_id' => $request->module_id,
+            ],
+            [
+                'course_id' => $request->course_id,
+                'is_completed' => false,
+                'progress_percentage' => 0,
+                'time_spent_seconds' => 0,
+            ]
+        );
+
+        return response()->api('Module started successfully', $progress);
+    }
+
+    // 2️⃣ Update module progress
+    public function updateModuleProgress(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'module_id' => 'required|exists:modules,id',
+            'progress_percentage' => 'required|numeric|min:0|max:100',
+            'time_spent_seconds' => 'nullable|numeric|min:0',
+        ]);
+
+        $progress = UserModuleProgress::where('user_id', $user->id)
+            ->where('module_id', $request->module_id)
+            ->first();
+
+        if (!$progress) {
+            return response()->api('Module progress not found', null, 404);
+        }
+
+        $progress->progress_percentage = $request->progress_percentage;
+        if ($request->filled('time_spent_seconds')) {
+            $progress->time_spent_seconds = $request->time_spent_seconds;
+        }
+
+        $progress->is_completed = $request->progress_percentage >= 100;
+        $progress->save();
+
+        return response()->api('Module progress updated successfully', $progress);
+    }
+
+    // 3️⃣ Update module item progress
+    public function updateModuleItemProgress(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'module_item_id' => 'required|exists:module_items,id',
+            'module_id' => 'required|exists:modules,id',
+            'watched_duration_seconds' => 'required|numeric|min:0',
+            'is_completed' => 'nullable|boolean',
+        ]);
+
+        $itemProgress = UserModuleItemProgress::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'module_item_id' => $request->module_item_id,
+            ],
+            [
+                'module_id' => $request->module_id,
+                'watched_duration_seconds' => $request->watched_duration_seconds,
+                'is_completed' => $request->boolean('is_completed', false),
+            ]
+        );
+
+        return response()->api('Module item progress updated successfully', $itemProgress);
+    }
+
+    // 4️⃣ Get my module progress
+    public function myModuleProgress()
+{
+
+    $user = auth()->user();
+
+    $progress = UserModuleProgress::where('user_id', $user->id)
+        ->with('module') // مع withDefault
+        ->get();
+
+    $data = $progress->map(function($p) {
+        return [
+            'id' => $p->id,
+            'module_id' => $p->module_id,
+            'module_title' => $p->module->title ?? 'Module Deleted',
+            'progress_percentage' => $p->progress_percentage,
+            'is_completed' => $p->is_completed,
+        ];
+    });
+
+    return response()->api('My module progress retrieved successfully', $data);
+}
+
+    // 5️⃣ Get my module item progress
+    public function myModuleItemProgress()
+    {
+        $user = auth()->user();
+
+        $progress = UserModuleItemProgress::where('user_id', $user->id)
+            ->with([
+                'module' => fn($q) => $q->withDefault(),
+                'moduleItem' => fn($q) => $q->withDefault()
+            ])
+            ->get();
+
+        return response()->api('My module item progress retrieved successfully', $progress);
+    }
+}
