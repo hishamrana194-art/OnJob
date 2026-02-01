@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ModuleProgress;
 use Illuminate\Http\Request;
 use App\Models\UserModuleProgress;
 use App\Models\UserModuleItemProgress;
@@ -19,6 +20,7 @@ class UserModuleProgressController extends Controller
             'course_id' => 'required|exists:courses,id',
         ]);
 
+
         $progress = UserModuleProgress::firstOrCreate(
             [
                 'user_id' => $user->id,
@@ -32,8 +34,34 @@ class UserModuleProgressController extends Controller
             ]
         );
 
-        return response()->api('Module started successfully', $progress);
-    }
+        return response()->api('Module started successfully', new ModuleProgress($progress));}
+
+
+       //3ayza 23mel code y7sb overall prog
+        public function overallProgress()
+         {
+             $user = auth()->user();
+
+    // كل تقدم الموديولات
+           $modulesProgress = UserModuleProgress::where('user_id', $user->id)->get();
+
+         $totalModules = $modulesProgress->count();
+
+        $completedModules = $modulesProgress->where('is_completed', true)->count();
+
+        $overallPercentage = $totalModules > 0
+         ? round(($completedModules / $totalModules) * 100, 2)
+        : 0;
+
+    $totalTimeSpent = $modulesProgress->sum('time_spent_seconds');
+
+    return response()->api('Overall progress retrieved successfully', [
+        'total_modules' => $totalModules,
+        'completed_modules' => $completedModules,
+        'overall_progress_percentage' => $overallPercentage,
+        'total_time_spent_seconds' => $totalTimeSpent,
+    ]);
+}
 
     // 2️⃣ Update module progress
     public function updateModuleProgress(Request $request)

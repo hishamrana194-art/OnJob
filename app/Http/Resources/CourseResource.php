@@ -19,14 +19,9 @@ class CourseResource extends JsonResource
             'category' => $this->whenLoaded('category', function () {
                 return new CategoryResource($this->category);
             }),
-            'title' => [
-                'en' => $this->getTranslation('title', 'en'),
-                'ar' => $this->getTranslation('title', 'ar'),
-            ],
-            'description' => [
-                'en' => $this->getTranslation('description', 'en'),
-                'ar' => $this->getTranslation('description', 'ar'),
-            ],
+            'title' => $this->title,
+            'description' => $this->description
+                ,
             'thumbnail_url' => $this->thumbnail_url,
             'level' => $this->level,
             'duration' => $this->duration,

@@ -95,6 +95,7 @@ Route::apiResource('/courses', CourseController::class);
 // Module progress routes (must be before apiResource to avoid conflicts)
 Route::middleware('auth:api')->prefix('modules')->group(function () {
     Route::post('start', [UserModuleProgressController::class, 'startModule']);
+    Route::get('overall-progress', [UserModuleProgressController::class, 'overallProgress']);
     Route::post('progress', [UserModuleProgressController::class, 'updateModuleProgress']);
     Route::post('item-progress', [UserModuleProgressController::class, 'updateModuleItemProgress']);
     Route::get('myprogress', [UserModuleProgressController::class, 'myModuleProgress']);
@@ -131,7 +132,7 @@ Route::middleware('auth:api')->prefix('enrollments')->group(function () {
 });
 Route::middleware('auth:api')->prefix('quiz-attempts')->group(function () {
 
-    Route::post('/', [UserQuizAttemptController::class, 'store']);
+    Route::post('/{id}', [UserQuizAttemptController::class, 'store']);
     Route::get('/my', [UserQuizAttemptController::class, 'myAttempts']);
     Route::get('/my/quiz/{quizId}', [UserQuizAttemptController::class, 'myAttemptsByQuiz']);
     Route::get('/passed', [UserQuizAttemptController::class, 'passedAttempts']);
@@ -153,6 +154,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/quizzes/{id}/submit', [QuizSubmissionController::class, 'submit']);
 });
 
+Route::middleware('auth:api')->get(
+    '/my-progress',
+    [\App\Http\Controllers\Api\ProgressDashboardController::class, 'myProgress']
+);
 
 
 

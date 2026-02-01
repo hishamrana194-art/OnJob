@@ -15,20 +15,11 @@ class ModuleResource extends JsonResource
             'course' => $this->whenLoaded('course', function () {
                 return [
                     'id' => $this->course->id,
-                    'title' => [
-                        'en' => $this->course->getTranslation('title', 'en'),
-                        'ar' => $this->course->getTranslation('title', 'ar'),
-                    ],
+                    'title' =>$this->title,
                 ];
             }),
-            'title' => [
-                'en' => $this->getTranslation('title', 'en'),
-                'ar' => $this->getTranslation('title', 'ar'),
-            ],
-            'description' => [
-                'en' => $this->getTranslation('description', 'en'),
-                'ar' => $this->getTranslation('description', 'ar'),
-            ],
+            'title' =>$this->title,
+            'description' =>$this->description,
             'order' => $this->order,
             'is_active' => $this->is_active,
             'items' => ModuleItemResource::collection($this->whenLoaded('items')),

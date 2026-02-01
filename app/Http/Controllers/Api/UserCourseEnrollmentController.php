@@ -3,16 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\UserCourseEnrollment;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use App\Http\Resources\UserCourseEnrollmentResource;
 
 class UserCourseEnrollmentController extends Controller
 {
-    // Enroll user in a course
+    /**
+     * 1️⃣ Enroll user in a course
+     */
     public function enroll(Request $request)
     {
-        $user=auth()->user();
+        $user = auth()->user();
 
         $request->validate([
             'course_id' => 'required|exists:courses,id',
@@ -21,58 +23,74 @@ class UserCourseEnrollmentController extends Controller
         $enrollment = UserCourseEnrollment::firstOrCreate(
             [
                 'user_id' => $user->id,
-                'course_id' => $request->course_id
+                'course_id' => $request->course_id,
             ],
             [
                 'enrolled_at' => now(),
                 'progress_percentage' => 0,
-                'points_earned' => 0
+                'points_earned' => 0,
             ]
         );
 
-        return response()->api('User enrolled successfully', $enrollment);
-    }
-
-    // Get enrolled courses for authenticated user
-    public function myEnrollments()
-    {
-        $user=auth()->user();
-
-        $enrollments = UserCourseEnrollment::byUser($user->id)->get();
-
-        return response()->api('User enrollments retrieved', $enrollments);
-    }
-    public function completedCourses()
-    {
-        $user=auth()->user();
-
-        $courses = UserCourseEnrollment::with('course')
-            ->byUser($user->id)
-            ->completed()
-            ->get();
+        // تحميل العلاقات عشان الـ resource يشتغل صح
+        $enrollment->load(['user', 'course']);
 
         return response()->api(
-            'Completed courses fetched successfully',
-            $courses
+            'User enrolled successfully',
+            new UserCourseEnrollmentResource($enrollment)
         );
     }
 
     /**
-     * Get in-progress courses (by token)
+     * 2️⃣ Get my enrolled courses
+     */
+    public function myEnrollments()
+    {
+        $user = auth()->user();
+
+        $enrollments = UserCourseEnrollment::byUser($user->id)
+            ->with(['user', 'course'])
+            ->get();
+
+        return response()->api(
+            'My enrollments retrieved successfully',
+            UserCourseEnrollmentResource::collection($enrollments)
+        );
+    }
+
+    /**
+     * 3️⃣ Completed courses
+     */
+    public function completedCourses()
+    {
+        $user = auth()->user();
+
+        $courses = UserCourseEnrollment::byUser($user->id)
+            ->whereNotNull('completed_at')
+            ->with(['user', 'course'])
+            ->get();
+
+        return response()->api(
+            'Completed courses fetched successfully',
+            UserCourseEnrollmentResource::collection($courses)
+        );
+    }
+
+    /**
+     * 4️⃣ In-progress courses
      */
     public function inProgressCourses()
     {
-        $user=auth()->user();
+        $user = auth()->user();
 
-        $courses = UserCourseEnrollment::with('course')
-            ->byUser($user->id)
-            ->inProgress()
+        $courses = UserCourseEnrollment::byUser($user->id)
+            ->whereNull('completed_at')
+            ->with(['user', 'course'])
             ->get();
 
         return response()->api(
             'In progress courses fetched successfully',
-            $courses
+            UserCourseEnrollmentResource::collection($courses)
         );
     }
-
 }

@@ -27,12 +27,12 @@ class QuizSubmissionController extends Controller
         // ❌ تحقق من أن المستخدم لم يحاول الامتحان من قبل
         $alreadyAttempted = UserQuizAttempt::where('user_id', $user->id)
             ->where('quiz_id', $quiz->id)
-            ->exists();
+            ->get();
 
         if ($alreadyAttempted) {
             return response()->api(
                 'You have already attempted this quiz. Retakes are not allowed.',
-                null,
+                $alreadyAttempted,
                 403
             );
         }
