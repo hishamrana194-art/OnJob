@@ -22,6 +22,12 @@ use App\Http\Controllers\Api\UserCourseEnrollmentController;
 use App\Http\Controllers\Api\UserModuleProgressController;
 use App\Http\Controllers\Api\UserQuizAttemptController;
 use App\Http\Controllers\Api\VendorController;
+use App\Http\Controllers\Api\LeaderboardController;
+use App\Http\Controllers\Api\RewardController;
+use App\Http\Controllers\Api\BadgeController;
+use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\ReelController;
+
 use Illuminate\Support\Facades\Route;
 
 // ========================
@@ -159,6 +165,44 @@ Route::middleware('auth:api')->get(
     [\App\Http\Controllers\Api\ProgressDashboardController::class, 'myProgress']
 );
 
+// ========================
+// Leaderboard Routes
+// ========================
+Route::middleware('auth:sanctum')->prefix('leaderboard')->group(function () {
+    Route::get('company', [LeaderboardController::class, 'company']);
+    Route::get('global', [LeaderboardController::class, 'global']);
+    Route::get('my-rank', [LeaderboardController::class, 'myRank']);
+});
 
+// ========================
+// Rewards Routes
+// ========================
+Route::middleware('auth:sanctum')->prefix('rewards')->group(function () {
+    Route::get('/', [RewardController::class, 'index']);
+    Route::post('redeem', [RewardController::class, 'redeem']);
+    Route::get('my-redemptions', [RewardController::class, 'myRedemptions']);
+});
 
+// ========================
+// Badges Routes
+// ========================
+Route::middleware('auth:sanctum')->prefix('badges')->group(function () {
+    Route::get('/', [BadgeController::class, 'index']);
+    Route::get('my', [BadgeController::class, 'myBadges']);
+});
+
+// ========================
+// Notifications Routes
+// ========================
+Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
+    Route::get('/', [NotificationController::class, 'index']);
+    Route::get('unread-count', [NotificationController::class, 'unreadCount']);
+    Route::post('{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('read-all', [NotificationController::class, 'markAllAsRead']);
+});
+
+// ========================
+// Reels Routes
+// ========================
+Route::middleware('auth:sanctum')->get('/reels', [ReelController::class, 'index']);
 

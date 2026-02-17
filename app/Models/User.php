@@ -229,5 +229,14 @@ class User extends Authenticatable
     {
         $this->increment('points', $points);
     }
-    
+
+    /**
+     * Get the user's badges.
+     */
+    public function badges()
+    {
+        return $this->belongsToMany(Badge::class, 'user_badges')
+            ->withPivot('earned_at')
+            ->withTimestamps();
+    }
 }
