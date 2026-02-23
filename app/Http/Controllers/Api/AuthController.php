@@ -164,22 +164,29 @@ class AuthController extends Controller
      */
      public function forgotPassword(Request $request)
 {
-    $request->validate([
-        'email' => 'required|email|exists:users,email',
-    ]);
+    // Accept both 'email' and 'identifier' field names
+    $email = $request->input('email') ?? $request->input('identifier');
+
+    if (!$email || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return response()->api('Valid email is required', null, 422);
+    }
+
+    if (!\App\Models\User::where('email', $email)->exists()) {
+        return response()->api('Email not found', null, 404);
+    }
 
     $otp = rand(100000, 999999);
 
     DB::table('password_resets')->updateOrInsert(
-        ['email' => $request->email],
+        ['email' => $email],
         [
             'token' => $otp,
             'created_at' => now()
         ]
     );
 
-    Mail::raw("Your OTP is: $otp. It is valid for 10 minutes.", function ($message) use ($request) {
-        $message->to($request->email)
+    Mail::raw("Your OTP is: $otp. It is valid for 10 minutes.", function ($message) use ($email) {
+        $message->to($email)
                 ->subject('Password Reset OTP');
     });
 

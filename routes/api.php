@@ -36,6 +36,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('reset-password', [AuthController::class, 'resetPassword']);
 
@@ -53,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::get('/profile', [AuthController::class, 'profile']);
+    Route::patch('/me/preferences', [UserController::class, 'updatePreferences']);
 });
 
 // ========================
@@ -104,6 +106,7 @@ Route::middleware('auth:api')->prefix('modules')->group(function () {
     Route::get('overall-progress', [UserModuleProgressController::class, 'overallProgress']);
     Route::post('progress', [UserModuleProgressController::class, 'updateModuleProgress']);
     Route::post('item-progress', [UserModuleProgressController::class, 'updateModuleItemProgress']);
+    Route::post('complete', [UserModuleProgressController::class, 'markComplete']);
     Route::get('myprogress', [UserModuleProgressController::class, 'myModuleProgress']);
     Route::get('my-item-progress', [UserModuleProgressController::class, 'myModuleItemProgress']);
 });
@@ -116,6 +119,7 @@ Route::apiResource('/questions', QuestionController::class);
 
 // Nested routes for better organization
 Route::get('/courses/{course}/modules', [ModuleController::class, 'byCourse']);
+Route::get('/courses/{course}/lessons', [ModuleController::class, 'lessonsByCourse']);
 Route::get('/modules/{module}/items', [ModuleItemController::class, 'byModule']);
 Route::get('/courses/{course}/quizzes', [QuizController::class, 'byCourse']);
 Route::get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
@@ -170,6 +174,7 @@ Route::middleware('auth:api')->get(
 // ========================
 Route::middleware('auth:sanctum')->prefix('leaderboard')->group(function () {
     Route::get('company', [LeaderboardController::class, 'company']);
+    Route::get('team', [LeaderboardController::class, 'team']);
     Route::get('global', [LeaderboardController::class, 'global']);
     Route::get('my-rank', [LeaderboardController::class, 'myRank']);
 });
@@ -204,5 +209,8 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
 // ========================
 // Reels Routes
 // ========================
-Route::middleware('auth:sanctum')->get('/reels', [ReelController::class, 'index']);
+Route::middleware('auth:sanctum')->prefix('reels')->group(function () {
+    Route::get('/', [ReelController::class, 'index']);
+    Route::post('{id}/complete', [ReelController::class, 'complete']);
+});
 

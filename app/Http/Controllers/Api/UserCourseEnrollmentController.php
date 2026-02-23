@@ -33,7 +33,7 @@ class UserCourseEnrollmentController extends Controller
         );
 
         // تحميل العلاقات عشان الـ resource يشتغل صح
-        $enrollment->load(['user', 'course']);
+        $enrollment->load(['user', 'course.vendor']);
 
         return response()->api(
             'User enrolled successfully',
@@ -49,7 +49,7 @@ class UserCourseEnrollmentController extends Controller
         $user = auth()->user();
 
         $enrollments = UserCourseEnrollment::byUser($user->id)
-            ->with(['user', 'course'])
+            ->with(['user', 'course.vendor'])
             ->get();
 
         return response()->api(
@@ -67,7 +67,7 @@ class UserCourseEnrollmentController extends Controller
 
         $courses = UserCourseEnrollment::byUser($user->id)
             ->whereNotNull('completed_at')
-            ->with(['user', 'course'])
+            ->with(['user', 'course.vendor'])
             ->get();
 
         return response()->api(
@@ -85,7 +85,7 @@ class UserCourseEnrollmentController extends Controller
 
         $courses = UserCourseEnrollment::byUser($user->id)
             ->whereNull('completed_at')
-            ->with(['user', 'course'])
+            ->with(['user', 'course.vendor'])
             ->get();
 
         return response()->api(

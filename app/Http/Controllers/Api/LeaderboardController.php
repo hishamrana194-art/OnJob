@@ -52,6 +52,47 @@ class LeaderboardController extends Controller
     }
 
     /**
+     * Team leaderboard - users with the same role in the same employer
+     */
+    public function team()
+    {
+        $user = auth()->user();
+
+        $query = User::query()->where('is_active', true);
+
+        if ($user->employer_id) {
+            $query->where('employer_id', $user->employer_id)
+                  ->where('role', $user->role);
+        } elseif ($user->vendor_id) {
+            $query->where('vendor_id', $user->vendor_id)
+                  ->where('role', $user->role);
+        }
+
+        $leaderboard = $query->orderByDesc('points')
+            ->select('id', 'name', 'points', 'avatar', 'role')
+            ->limit(30)
+            ->get();
+
+        // Fallback: if team is empty, return same company
+        if ($leaderboard->isEmpty()) {
+            $fallbackQuery = User::query()->where('is_active', true);
+            if ($user->employer_id) {
+                $fallbackQuery->where('employer_id', $user->employer_id);
+            } elseif ($user->vendor_id) {
+                $fallbackQuery->where('vendor_id', $user->vendor_id);
+            }
+            $leaderboard = $fallbackQuery->orderByDesc('points')
+                ->select('id', 'name', 'points', 'avatar', 'role')
+                ->limit(30)
+                ->get();
+        }
+
+        $ranked = $this->addRanks($leaderboard, $user->id);
+
+        return response()->api('Team leaderboard retrieved', $ranked);
+    }
+
+    /**
      * My rank info
      */
     public function myRank()

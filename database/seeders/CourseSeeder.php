@@ -21,6 +21,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'duration' => 120,
                 'status' => 'published',
+                'is_mandatory' => true,
             ],
             [
                 'title' => ['en' => 'Advanced Python Programming', 'ar' => 'برمجة بايثون المتقدمة'],
@@ -28,6 +29,7 @@ class CourseSeeder extends Seeder
                 'level' => 'advanced',
                 'duration' => 80,
                 'status' => 'published',
+                'is_mandatory' => false,
             ],
             [
                 'title' => ['en' => 'Digital Marketing Masterclass', 'ar' => 'ماستركلاس التسويق الرقمي'],
@@ -35,6 +37,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'duration' => 60,
                 'status' => 'published',
+                'is_mandatory' => true,
             ],
             [
                 'title' => ['en' => 'UI/UX Design Fundamentals', 'ar' => 'أساسيات تصميم واجهات المستخدم'],
@@ -42,6 +45,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'duration' => 45,
                 'status' => 'published',
+                'is_mandatory' => false,
             ],
             [
                 'title' => ['en' => 'Leadership and Management Skills', 'ar' => 'مهارات القيادة والإدارة'],
@@ -49,6 +53,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'duration' => 30,
                 'status' => 'published',
+                'is_mandatory' => true,
             ],
             [
                 'title' => ['en' => 'Mobile App Development with Flutter', 'ar' => 'تطوير تطبيقات الموبايل بفلتر'],
@@ -56,6 +61,7 @@ class CourseSeeder extends Seeder
                 'level' => 'intermediate',
                 'duration' => 90,
                 'status' => 'draft',
+                'is_mandatory' => false,
             ],
             [
                 'title' => ['en' => 'Data Science with Python', 'ar' => 'علم البيانات مع بايثون'],
@@ -63,6 +69,7 @@ class CourseSeeder extends Seeder
                 'level' => 'advanced',
                 'duration' => 100,
                 'status' => 'published',
+                'is_mandatory' => false,
             ],
             [
                 'title' => ['en' => 'English for Business', 'ar' => 'الإنجليزية للأعمال'],
@@ -70,6 +77,7 @@ class CourseSeeder extends Seeder
                 'level' => 'beginner',
                 'duration' => 40,
                 'status' => 'published',
+                'is_mandatory' => false,
             ],
         ];
 

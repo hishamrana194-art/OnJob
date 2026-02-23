@@ -36,6 +36,8 @@ class DatabaseSeeder extends Seeder
             ModuleItemSeeder::class,
             QuizSeeder::class,
             QuestionSeeder::class,
+            EnrollmentSeeder::class,
+            ReelSeeder::class,
         ]);
     }
 }

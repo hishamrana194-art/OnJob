@@ -24,10 +24,10 @@ class QuizSubmissionController extends Controller
             'time_taken_seconds' => 'required|numeric|min:0',
         ]);
 
-        // ❌ تحقق من أن المستخدم لم يحاول الامتحان من قبل
+        // تحقق من أن المستخدم لم يحاول الامتحان من قبل
         $alreadyAttempted = UserQuizAttempt::where('user_id', $user->id)
             ->where('quiz_id', $quiz->id)
-            ->get();
+            ->first();
 
         if ($alreadyAttempted) {
             return response()->api(

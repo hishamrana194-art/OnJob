@@ -507,5 +507,35 @@ class UserController extends Controller
             200
         );
     }
+
+    /**
+     * Update user preferences (language, notifications)
+     */
+    public function updatePreferences(Request $request)
+    {
+        $request->validate([
+            'language' => 'nullable|in:ar,en',
+            'notifications_enabled' => 'nullable|boolean',
+        ]);
+
+        $user = auth()->user();
+        $data = [];
+
+        if ($request->has('language')) {
+            $data['locale'] = $request->language;
+        }
+        if ($request->has('notifications_enabled')) {
+            $data['notifications_enabled'] = $request->notifications_enabled;
+        }
+
+        if (!empty($data)) {
+            $user->update($data);
+        }
+
+        return response()->api('Preferences updated', [
+            'language' => $user->fresh()->locale,
+            'notifications_enabled' => $user->fresh()->notifications_enabled ?? true,
+        ]);
+    }
 }
 

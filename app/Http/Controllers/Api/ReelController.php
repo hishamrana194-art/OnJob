@@ -32,4 +32,23 @@ class ReelController extends Controller
 
         return response()->api('Reels retrieved', $reels);
     }
+
+    /**
+     * Mark reel as watched/completed
+     */
+    public function complete(string $id)
+    {
+        $reel = Reel::find($id);
+
+        if (!$reel) {
+            return response()->api('Reel not found', null, 404);
+        }
+
+        $user = auth()->user();
+
+        return response()->api('Reel marked as complete', [
+            'reel_id' => $reel->id,
+            'points' => $user->points,
+        ]);
+    }
 }

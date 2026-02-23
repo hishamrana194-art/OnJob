@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateModuleRequest;
 use App\Http\Resources\ModuleResource;
 use App\Http\Traits\Paginatable;
 use App\Models\Module;
+use App\Models\ModuleItem;
 use Illuminate\Http\Request;
 
 class ModuleController extends Controller
@@ -78,7 +79,7 @@ class ModuleController extends Controller
         );
     }
 
-    // Get modules by course
+    // Get modules by course (paginated, nested)
     public function byCourse(Request $request, string $courseId)
     {
         $params = $this->getPaginationParams($request);
@@ -94,5 +95,48 @@ class ModuleController extends Controller
             $this->paginationResponse($modules, ModuleResource::class),
             200
         );
+    }
+
+    // Get flat lesson list for a course (mobile-friendly)
+    public function lessonsByCourse(string $courseId)
+    {
+        $locale = app()->getLocale() ?: 'ar';
+
+        $items = ModuleItem::whereHas('module', function ($q) use ($courseId) {
+                $q->where('course_id', $courseId);
+            })
+            ->with(['module', 'quiz'])
+            ->orderBy('order')
+            ->get()
+            ->map(function ($item) use ($locale) {
+                $fallback = $locale === 'ar' ? 'en' : 'ar';
+                $titleArr = is_array($item->title) ? $item->title : [];
+                $title = $titleArr[$locale] ?? $titleArr[$fallback] ?? $item->title ?? '';
+
+                // Determine video_url and pdf_url based on type
+                $videoUrl = null;
+                $pdfUrl = null;
+                if ($item->type === 'video') {
+                    $videoUrl = $item->file_url;
+                } elseif ($item->type === 'pdf' || $item->type === 'document') {
+                    $pdfUrl = $item->file_url;
+                }
+
+                return [
+                    'id'            => $item->id,
+                    'title'         => $titleArr ?: ['ar' => $title, 'en' => $title],
+                    'type'          => $item->type ?? 'video',
+                    'duration'      => $item->duration ?? 0,
+                    'duration_type' => 'minutes',
+                    'status'        => 'in_progress',
+                    'quiz_id'       => $item->quiz?->id,
+                    'video_url'     => $videoUrl,
+                    'pdf_url'       => $pdfUrl,
+                    'module_id'     => $item->module_id,
+                    'order'         => $item->order,
+                ];
+            });
+
+        return response()->api('Lessons retrieved successfully', $items);
     }
 }

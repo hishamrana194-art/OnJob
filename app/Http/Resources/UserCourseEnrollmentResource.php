@@ -19,6 +19,7 @@ class UserCourseEnrollmentResource extends JsonResource
             'course' => new CourseResource($this->course),
 
             'enrolled_at' => $this->enrolled_at,
+            'due_at' => $this->due_at,
             'started_at' => $this->started_at,
             'completed_at' => $this->completed_at,
 

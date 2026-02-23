@@ -143,6 +143,36 @@ class UserModuleProgressController extends Controller
     return response()->api('My module progress retrieved successfully', $data);
 }
 
+    // 6️⃣ Simple mark module/item as complete (used by Flutter app)
+    public function markComplete(Request $request)
+    {
+        $user = auth()->user();
+
+        $request->validate([
+            'module_id' => 'required|integer',
+            'status' => 'nullable|string',
+        ]);
+
+        // Try module_items table first (moduleId might be an item ID)
+        $itemProgress = UserModuleItemProgress::updateOrCreate(
+            [
+                'user_id' => $user->id,
+                'module_item_id' => $request->module_id,
+            ],
+            [
+                'is_completed' => true,
+                'watched_duration_seconds' => 0,
+            ]
+        );
+
+        // Also update parent module progress if possible
+        UserModuleProgress::where('user_id', $user->id)
+            ->where('module_id', $request->module_id)
+            ->update(['is_completed' => true]);
+
+        return response()->api('Module marked as complete', ['module_id' => $request->module_id]);
+    }
+
     // 5️⃣ Get my module item progress
     public function myModuleItemProgress()
     {
