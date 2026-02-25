@@ -7,6 +7,7 @@ use App\Http\Resources\ModuleProgress;
 use Illuminate\Http\Request;
 use App\Models\UserModuleProgress;
 use App\Models\UserModuleItemProgress;
+use App\Models\ModuleItem;
 
 class UserModuleProgressController extends Controller
 {
@@ -153,21 +154,31 @@ class UserModuleProgressController extends Controller
             'status' => 'nullable|string',
         ]);
 
-        // Try module_items table first (moduleId might be an item ID)
-        $itemProgress = UserModuleItemProgress::updateOrCreate(
+        // Look up the ModuleItem to get its parent module_id
+        $moduleItem = ModuleItem::find($request->module_id);
+
+        if (!$moduleItem) {
+            return response()->api('Module item not found', null, 404);
+        }
+
+        $parentModuleId = $moduleItem->module_id;
+
+        // Update or create item progress record
+        UserModuleItemProgress::updateOrCreate(
             [
-                'user_id' => $user->id,
-                'module_item_id' => $request->module_id,
+                'user_id'        => $user->id,
+                'module_item_id' => $moduleItem->id,
             ],
             [
-                'is_completed' => true,
-                'watched_duration_seconds' => 0,
+                'module_id'               => $parentModuleId,
+                'is_completed'            => true,
+                'watched_duration_seconds'=> 0,
             ]
         );
 
-        // Also update parent module progress if possible
+        // Also mark parent module as complete
         UserModuleProgress::where('user_id', $user->id)
-            ->where('module_id', $request->module_id)
+            ->where('module_id', $parentModuleId)
             ->update(['is_completed' => true]);
 
         return response()->api('Module marked as complete', ['module_id' => $request->module_id]);
