@@ -119,10 +119,10 @@ Route::apiResource('/questions', QuestionController::class);
 
 // Nested routes for better organization
 Route::get('/courses/{course}/modules', [ModuleController::class, 'byCourse']);
-Route::get('/courses/{course}/lessons', [ModuleController::class, 'lessonsByCourse']);
+Route::middleware('auth:sanctum')->get('/courses/{course}/lessons', [ModuleController::class, 'lessonsByCourse']);
 Route::get('/modules/{module}/items', [ModuleItemController::class, 'byModule']);
 Route::get('/courses/{course}/quizzes', [QuizController::class, 'byCourse']);
-Route::get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
+Route::middleware('auth:sanctum')->get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
 
 // ========================
 // Super Admin Routes (Protected - Admin only)
