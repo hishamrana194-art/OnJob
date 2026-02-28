@@ -9,6 +9,7 @@ use App\Http\Resources\ModuleResource;
 use App\Http\Traits\Paginatable;
 use App\Models\Module;
 use App\Models\ModuleItem;
+use App\Models\UserModuleItemProgress;
 use Illuminate\Http\Request;
 
 class ModuleController extends Controller
@@ -101,6 +102,15 @@ class ModuleController extends Controller
     public function lessonsByCourse(string $courseId)
     {
         $locale = app()->getLocale() ?: 'ar';
+        $user = auth()->user();
+
+        // Fetch completed item IDs for this user in one query
+        $completedIds = $user
+            ? UserModuleItemProgress::where('user_id', $user->id)
+                ->where('is_completed', true)
+                ->pluck('module_item_id')
+                ->toArray()
+            : [];
 
         $items = ModuleItem::whereHas('module', function ($q) use ($courseId) {
                 $q->where('course_id', $courseId);
@@ -108,7 +118,7 @@ class ModuleController extends Controller
             ->with(['module', 'quiz'])
             ->orderBy('order')
             ->get()
-            ->map(function ($item) use ($locale) {
+            ->map(function ($item) use ($locale, $completedIds) {
                 $fallback = $locale === 'ar' ? 'en' : 'ar';
                 $titleArr = is_array($item->title) ? $item->title : [];
                 $title = $titleArr[$locale] ?? $titleArr[$fallback] ?? $item->title ?? '';
@@ -122,13 +132,15 @@ class ModuleController extends Controller
                     $pdfUrl = $item->file_url;
                 }
 
+                $isCompleted = in_array($item->id, $completedIds);
+
                 return [
                     'id'            => $item->id,
                     'title'         => $titleArr ?: ['ar' => $title, 'en' => $title],
                     'type'          => $item->type ?? 'video',
                     'duration'      => $item->duration ?? 0,
                     'duration_type' => 'minutes',
-                    'status'        => 'in_progress',
+                    'status'        => $isCompleted ? 'completed' : 'in_progress',
                     'quiz_id'       => $item->quiz?->id,
                     'video_url'     => $videoUrl,
                     'pdf_url'       => $pdfUrl,
