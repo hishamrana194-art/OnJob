@@ -34,13 +34,10 @@ class GamificationService
 
     public static function awardXp(User $user, int $amount, ?string $reason = null, ?string $refType = null, ?int $refId = null): bool
     {
-        // XP is the experience currency (leaderboard/level).
-        // This app UI also expects "points" that can be spent in rewards.
-        // To keep UX consistent, we mirror XP earnings into coins (spendable points)
-        // using the same reference so it remains idempotent.
-        $xpAwarded = self::award($user, 'xp_earn', $amount, $reason, $refType, $refId);
-        self::award($user, 'coins_earn', $amount, $reason ?: 'coins_from_xp', $refType, $refId);
-        return $xpAwarded;
+        // XP is the experience/leaderboard currency.
+        // Coins (spendable points) are awarded separately via awardCoins() so each
+        // has its own idempotency slot and correct amount.
+        return self::award($user, 'xp_earn', $amount, $reason, $refType, $refId);
     }
 
     public static function awardCoins(User $user, int $amount, ?string $reason = null, ?string $refType = null, ?int $refId = null): bool

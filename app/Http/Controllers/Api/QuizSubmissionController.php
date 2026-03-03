@@ -17,7 +17,7 @@ class QuizSubmissionController extends Controller
     {
         $user = auth()->user();
 
-        $quiz = Quiz::with(['questions','moduleItem','course'])->find($id);
+        $quiz = Quiz::with(['questions.options','questions.blanks','questions.matches','moduleItem','course'])->find($id);
 
         if (!$quiz) {
             return response()->api('Quiz not found', null, 404);
@@ -60,19 +60,44 @@ class QuizSubmissionController extends Controller
 
             switch ($question->type) {
                 case 'single_choice':
-                    if ($userAnswer === $question->correct_answer) $score += $question->points;
+                    // Flutter sends the selected option's ID as the answer value
+                    $correctOption = $question->options->firstWhere('is_correct', true);
+                    if ($correctOption && (int)$userAnswer === (int)$correctOption->id) {
+                        $score += $question->points;
+                    }
                     break;
                 case 'multiple_choice':
-                    if (is_array($userAnswer) &&
-                        count(array_diff($question->correct_answer, $userAnswer)) === 0 &&
-                        count(array_diff($userAnswer, $question->correct_answer)) === 0
-                    ) $score += $question->points;
+                    // Flutter sends an array of selected option IDs
+                    $correctIds = $question->options
+                        ->where('is_correct', true)
+                        ->pluck('id')
+                        ->map(fn($v) => (int)$v)
+                        ->sort()->values()->toArray();
+                    $submittedIds = is_array($userAnswer)
+                        ? collect($userAnswer)->map(fn($v) => (int)$v)->sort()->values()->toArray()
+                        : [];
+                    if ($correctIds === $submittedIds) $score += $question->points;
                     break;
                 case 'fill_in_blanks':
-                    if (strtolower(trim($userAnswer)) === strtolower(trim($question->correct_answer))) $score += $question->points;
+                    // Flutter sends the typed text; compare against each blank's correct answer
+                    $blank = $question->blanks->first();
+                    $correctText = $blank?->correct_answer ?? '';
+                    if (strtolower(trim((string)$userAnswer)) === strtolower(trim($correctText))) {
+                        $score += $question->points;
+                    }
                     break;
                 case 'matching':
-                    if (is_array($userAnswer) && $userAnswer == $question->correct_answer) $score += $question->points;
+                    // Flutter sends {leftId: rightId, ...}; compare against QuestionMatch records
+                    if (is_array($userAnswer)) {
+                        $allCorrect = true;
+                        foreach ($question->matches as $match) {
+                            if ((int)($userAnswer[$match->id] ?? -1) !== (int)$match->match_id) {
+                                $allCorrect = false;
+                                break;
+                            }
+                        }
+                        if ($allCorrect && $question->matches->isNotEmpty()) $score += $question->points;
+                    }
                     break;
             }
         }
