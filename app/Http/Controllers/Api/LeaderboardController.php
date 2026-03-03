@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\DB;
 class LeaderboardController extends Controller
 {
     /**
@@ -23,8 +23,8 @@ class LeaderboardController extends Controller
             $query->where('vendor_id', $user->vendor_id);
         }
 
-        $leaderboard = $query->orderByDesc('points')
-            ->select('id', 'name', 'points', 'avatar')
+        $leaderboard = $query->orderByRaw('COALESCE(xp, points, 0) DESC')
+            ->select('id','name', DB::raw("COALESCE(xp, points, 0) as xp"), 'avatar')
             ->limit(50)
             ->get();
 
@@ -41,8 +41,8 @@ class LeaderboardController extends Controller
         $user = auth()->user();
 
         $leaderboard = User::where('is_active', true)
-            ->orderByDesc('points')
-            ->select('id', 'name', 'points', 'avatar')
+            ->orderByRaw('COALESCE(xp, points, 0) DESC')
+            ->select('id','name', DB::raw("COALESCE(xp, points, 0) as xp"), 'avatar')
             ->limit(50)
             ->get();
 
@@ -62,14 +62,14 @@ class LeaderboardController extends Controller
 
         if ($user->employer_id) {
             $query->where('employer_id', $user->employer_id)
-                  ->where('role', $user->role);
+                ->where('role', $user->role);
         } elseif ($user->vendor_id) {
             $query->where('vendor_id', $user->vendor_id)
-                  ->where('role', $user->role);
+                ->where('role', $user->role);
         }
 
-        $leaderboard = $query->orderByDesc('points')
-            ->select('id', 'name', 'points', 'avatar', 'role')
+        $leaderboard = $query->orderByRaw('COALESCE(xp, points, 0) DESC')
+            ->select('id','name', DB::raw("COALESCE(xp, points, 0) as xp"), 'avatar', 'role')
             ->limit(30)
             ->get();
 
@@ -81,8 +81,8 @@ class LeaderboardController extends Controller
             } elseif ($user->vendor_id) {
                 $fallbackQuery->where('vendor_id', $user->vendor_id);
             }
-            $leaderboard = $fallbackQuery->orderByDesc('points')
-                ->select('id', 'name', 'points', 'avatar', 'role')
+            $leaderboard = $fallbackQuery->orderByRaw('COALESCE(xp, points, 0) DESC')
+                ->select('id','name', DB::raw("COALESCE(xp, points, 0) as xp"), 'avatar', 'role')
                 ->limit(30)
                 ->get();
         }
@@ -93,31 +93,34 @@ class LeaderboardController extends Controller
     }
 
     /**
-     * My rank info
+     * My rank info (based on XP)
      */
     public function myRank()
     {
         $user = auth()->user();
 
+        $myXp = (int)($user->xp ?? 0);
+
         // Global rank
         $globalRank = User::where('is_active', true)
-            ->where('points', '>', $user->points)
+            ->where('xp', '>', $myXp)
             ->count() + 1;
 
         // Company rank
-        $companyRank = 0;
         $query = User::where('is_active', true);
         if ($user->employer_id) {
             $query->where('employer_id', $user->employer_id);
         } elseif ($user->vendor_id) {
             $query->where('vendor_id', $user->vendor_id);
         }
-        $companyRank = $query->where('points', '>', $user->points)->count() + 1;
+        $companyRank = $query->where('xp', '>', $myXp)->count() + 1;
 
         return response()->api('My rank retrieved', [
             'global_rank' => $globalRank,
             'company_rank' => $companyRank,
-            'points' => $user->points,
+            'xp' => $myXp,
+            // Backward compatibility
+            'points' => $myXp,
             'name' => $user->name,
         ]);
     }
@@ -126,11 +129,14 @@ class LeaderboardController extends Controller
     {
         $rank = 1;
         return $leaderboard->map(function ($item) use (&$rank, $currentUserId) {
+            $xp = (int)($item->xp ?? 0);
             return [
                 'rank' => $rank++,
                 'id' => $item->id,
                 'name' => $item->name,
-                'points' => $item->points,
+                'xp' => $xp,
+                // Backward compatibility
+                'points' => $xp,
                 'avatar' => $item->avatar ? asset('storage/' . $item->avatar) : null,
                 'is_current_user' => $item->id === $currentUserId,
             ];

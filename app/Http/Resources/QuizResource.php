@@ -36,11 +36,37 @@ class QuizResource extends JsonResource
             'shuffle_questions' => $this->shuffle_questions,
             'show_correct_answers' => $this->show_correct_answers,
             'is_active' => $this->is_active,
-            'questions' => QuestionResource::collection($this->whenLoaded('questions')),
-            'questions_count' => $this->whenCounted('questions'),
-            'total_points' => $this->when($this->relationLoaded('questions'), function () {
-                return $this->questions->sum('points');
-            }),
+            // NOTE:
+            // The mobile UI currently supports only choice questions.
+            // So we filter to keep: single_choice, multiple_choice.
+            'questions' => $this->when(
+                $this->relationLoaded('questions'),
+                function () {
+                    $questions = $this->questions
+                        ->whereIn('type', ['single_choice', 'multiple_choice'])
+                        ->values();
+                    return QuestionResource::collection($questions);
+                },
+                []
+            ),
+            'questions_count' => $this->when(
+                $this->relationLoaded('questions'),
+                function () {
+                    return $this->questions
+                        ->whereIn('type', ['single_choice', 'multiple_choice'])
+                        ->count();
+                },
+                0
+            ),
+            'total_points' => $this->when(
+                $this->relationLoaded('questions'),
+                function () {
+                    return $this->questions
+                        ->whereIn('type', ['single_choice', 'multiple_choice'])
+                        ->sum('points');
+                },
+                0
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

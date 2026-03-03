@@ -138,7 +138,19 @@ class AuthController extends Controller
      */
     public function profile(Request $request)
     {
-        $user = $request->user()->load( 'roles', 'permissions');
+        $user = $request->user()->load('roles', 'permissions');
+
+        // UX: the app shows spendable "points" (coins) on home/rewards.
+        // For existing users migrated from the old points system, ensure coins is initialized.
+        try {
+            $user->refresh();
+            if ((int)($user->coins ?? 0) === 0 && (int)($user->xp ?? 0) > 0) {
+                $user->coins = (int)$user->xp;
+                $user->save();
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
         return response()->api(
             'Profile retrieved successfully',

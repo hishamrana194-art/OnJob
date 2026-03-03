@@ -16,6 +16,14 @@ class BadgeController extends Controller
     {
         $user = auth()->user();
 
+        // Ensure badges are awarded for users who already completed lessons/quizzes
+        // before badge rules were introduced.
+        try {
+            \App\Services\BadgeService::checkAfterLearningEvent($user);
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         $badges = $user->badges()
             ->orderByPivot('earned_at', 'desc')
             ->get()

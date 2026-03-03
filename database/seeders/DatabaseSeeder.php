@@ -38,6 +38,10 @@ class DatabaseSeeder extends Seeder
             QuestionSeeder::class,
             EnrollmentSeeder::class,
             ReelSeeder::class,
+
+            // Gamification catalogs
+            RewardSeeder::class,
+            BadgeSeeder::class,
         ]);
     }
 }

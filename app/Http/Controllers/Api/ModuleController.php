@@ -104,6 +104,38 @@ class ModuleController extends Controller
         $locale = app()->getLocale() ?: 'ar';
         $user = auth()->user();
 
+        // Some datasets have quizzes created with course_id but without module_item_id.
+        // To allow mobile to render quizzes in the lessons list and track progress consistently,
+        // we create a dedicated module_item (type=quiz) once and link the quiz to it.
+        try {
+            $firstModule = \App\Models\Module::where('course_id', $courseId)->orderBy('order')->first();
+            if ($firstModule) {
+                $maxOrder = (int) \App\Models\ModuleItem::where('module_id', $firstModule->id)->max('order');
+                $orphans = \App\Models\Quiz::where('course_id', $courseId)
+                    ->whereNull('module_item_id')
+                    ->where('is_active', true)
+                    ->get();
+
+                foreach ($orphans as $quiz) {
+                    $maxOrder++;
+                    $item = \App\Models\ModuleItem::create([
+                        'module_id' => $firstModule->id,
+                        'type' => 'quiz',
+                        'title' => $quiz->title,
+                        'content' => $quiz->description,
+                        'file_url' => null,
+                        'duration' => $quiz->time_limit ?? 0,
+                        'order' => $maxOrder,
+                        'is_active' => true,
+                    ]);
+                    $quiz->module_item_id = $item->id;
+                    $quiz->save();
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
         // Fetch completed item IDs for this user in one query
         $completedIds = $user
             ? UserModuleItemProgress::where('user_id', $user->id)
@@ -126,9 +158,20 @@ class ModuleController extends Controller
                 // Determine video_url and pdf_url based on type
                 $videoUrl = null;
                 $pdfUrl = null;
-                if ($item->type === 'video') {
+                $normalizedType = $item->type ?? 'video';
+                if ($normalizedType === 'document') {
+                    $normalizedType = 'pdf';
+                }
+
+                // Some legacy records rely on quiz_id without setting type.
+                // Normalize so mobile can render quizzes.
+                if (($item->quiz_id || $item->quiz) && $normalizedType === 'video' && empty($item->file_url)) {
+                    $normalizedType = 'quiz';
+                }
+
+                if ($normalizedType === 'video') {
                     $videoUrl = $item->file_url;
-                } elseif ($item->type === 'pdf' || $item->type === 'document') {
+                } elseif ($normalizedType === 'pdf') {
                     $pdfUrl = $item->file_url;
                 }
 
@@ -137,7 +180,7 @@ class ModuleController extends Controller
                 return [
                     'id'            => $item->id,
                     'title'         => $titleArr ?: ['ar' => $title, 'en' => $title],
-                    'type'          => $item->type ?? 'video',
+                    'type'          => $normalizedType,
                     'duration'      => $item->duration ?? 0,
                     'duration_type' => 'minutes',
                     'status'        => $isCompleted ? 'completed' : 'in_progress',

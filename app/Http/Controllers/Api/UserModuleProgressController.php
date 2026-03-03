@@ -7,6 +7,7 @@ use App\Http\Resources\ModuleProgress;
 use Illuminate\Http\Request;
 use App\Models\UserModuleProgress;
 use App\Models\UserModuleItemProgress;
+use App\Models\UserCourseEnrollment;
 use App\Models\ModuleItem;
 
 class UserModuleProgressController extends Controller
@@ -149,19 +150,20 @@ class UserModuleProgressController extends Controller
     {
         $user = auth()->user();
 
+        // NOTE: Flutter sends module_id but it is actually a ModuleItem ID.
         $request->validate([
             'module_id' => 'required|integer',
             'status' => 'nullable|string',
         ]);
 
-        // Look up the ModuleItem to get its parent module_id
-        $moduleItem = ModuleItem::find($request->module_id);
+        $moduleItem = ModuleItem::with(['module'])->find($request->module_id);
 
         if (!$moduleItem) {
             return response()->api('Module item not found', null, 404);
         }
 
         $parentModuleId = $moduleItem->module_id;
+        $courseId = $moduleItem->module?->course_id;
 
         // Update or create item progress record
         UserModuleItemProgress::updateOrCreate(
@@ -176,15 +178,59 @@ class UserModuleProgressController extends Controller
             ]
         );
 
-        // Also mark parent module as complete
-        UserModuleProgress::where('user_id', $user->id)
-            ->where('module_id', $parentModuleId)
-            ->update(['is_completed' => true]);
+        // Ensure parent module progress exists then mark complete
+        if ($courseId) {
+            UserModuleProgress::firstOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'module_id' => $parentModuleId,
+                ],
+                [
+                    'course_id' => $courseId,
+                    'is_completed' => false,
+                    'progress_percentage' => 0,
+                    'time_spent_seconds' => 0,
+                ]
+            );
 
-        return response()->api('Module marked as complete', ['module_id' => $request->module_id]);
+            UserModuleProgress::where('user_id', $user->id)
+                ->where('module_id', $parentModuleId)
+                ->update(['is_completed' => true, 'progress_percentage' => 100]);
+        }
+
+        // Award XP once per module_item (video/pdf only)
+        $type = strtolower((string)($moduleItem->type ?? 'video'));
+        if (in_array($type, ['pdf', 'document'])) {
+            \App\Services\GamificationService::awardXp($user, \App\Services\GamificationService::XP_PDF_COMPLETE, 'module_item_complete', 'module_item', (int)$moduleItem->id);
+            \App\Services\GamificationService::awardCoins($user, \App\Services\GamificationService::COINS_PDF_COMPLETE, 'module_item_complete', 'module_item', (int)$moduleItem->id);
+        } elseif ($type === 'video') {
+            \App\Services\GamificationService::awardXp($user, \App\Services\GamificationService::XP_VIDEO_COMPLETE, 'module_item_complete', 'module_item', (int)$moduleItem->id);
+            \App\Services\GamificationService::awardCoins($user, \App\Services\GamificationService::COINS_VIDEO_COMPLETE, 'module_item_complete', 'module_item', (int)$moduleItem->id);
+        }
+
+        // Recalculate and update enrollment progress_percentage (based on ITEMS)
+        if ($courseId) {
+            $totalItems = ModuleItem::whereHas('module', fn($q) => $q->where('course_id', $courseId))->count();
+            $completedItems = UserModuleItemProgress::where('user_id', $user->id)
+                ->where('is_completed', true)
+                ->whereHas('moduleItem', fn($q) => $q->whereHas('module', fn($q2) => $q2->where('course_id', $courseId)))
+                ->count();
+            $newProgress = $totalItems > 0 ? round($completedItems / $totalItems * 100) : 0;
+
+            UserCourseEnrollment::where('user_id', $user->id)
+                ->where('course_id', $courseId)
+                ->update(['progress_percentage' => $newProgress]);
+        }
+
+        return response()->api('Module marked as complete', [
+            'module_item_id' => (int)$moduleItem->id,
+            'course_id' => $courseId,
+            'xp' => (int)($user->fresh()->xp ?? 0),
+            'coins' => (int)($user->fresh()->coins ?? 0),
+        ]);
     }
 
-    // 5️⃣ Get my module item progress
+// 5️⃣ Get my module item progress
     public function myModuleItemProgress()
     {
         $user = auth()->user();
@@ -197,5 +243,14 @@ class UserModuleProgressController extends Controller
             ->get();
 
         return response()->api('My module item progress retrieved successfully', $progress);
+    }
+
+
+    // ✅ New: complete a module item by URL param (recommended for mobile)
+    public function completeModuleItem(string $moduleItemId)
+    {
+        $request = request();
+        $request->merge(['module_id' => (int)$moduleItemId]);
+        return $this->markComplete($request);
     }
 }

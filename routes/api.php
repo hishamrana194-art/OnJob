@@ -113,6 +113,8 @@ Route::middleware('auth:api')->prefix('modules')->group(function () {
 
 Route::apiResource('/modules', ModuleController::class);
 Route::apiResource('/module-items', ModuleItemController::class);
+// Complete a module item (mobile-friendly)
+Route::middleware('auth:api')->post('/module-items/{moduleItem}/complete', [UserModuleProgressController::class, 'completeModuleItem']);
 Route::apiResource('/quizzes', QuizController::class);
 Route::apiResource('/questions', QuestionController::class);
 

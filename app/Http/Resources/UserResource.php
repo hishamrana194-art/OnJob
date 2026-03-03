@@ -14,6 +14,12 @@ class UserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // XP/Coins are the new gamification currencies.
+        // Keep legacy `points` for backward compatibility with older clients.
+        $xp = (int)($this->xp ?? 0);
+        $coins = (int)($this->coins ?? 0);
+        $level = \App\Services\GamificationService::levelFromXp($xp);
+
         return [
             'id' => $this->id,
             'name' => $this->name,
@@ -57,7 +63,13 @@ class UserResource extends JsonResource
                 return $this->getAllPermissions()->pluck('name');
             }),
 
-            'points' => $this->points,
+            // New fields
+            'xp' => $xp,
+            'coins' => $coins,
+            'level' => $level,
+
+            // Legacy (treat as XP)
+            'points' => $xp,
             'locale' => $this->locale,
             'is_active' => (bool) $this->is_active,
             'last_login_at' => $this->last_login_at?->format('Y-m-d H:i:s'),

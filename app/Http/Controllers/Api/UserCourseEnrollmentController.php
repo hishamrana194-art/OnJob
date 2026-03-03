@@ -52,6 +52,40 @@ class UserCourseEnrollmentController extends Controller
             ->with(['user', 'course.vendor'])
             ->get();
 
+        // Ensure progress is always accurate on first load.
+        // Some old records may have stale progress_percentage; recompute from completed module items.
+        foreach ($enrollments as $enrollment) {
+            try {
+                $courseId = $enrollment->course_id;
+                $totalItems = \App\Models\ModuleItem::whereHas('module', function ($q) use ($courseId) {
+                        $q->where('course_id', $courseId);
+                    })
+                    ->count();
+
+                $completedItems = \App\Models\UserModuleItemProgress::where('user_id', $user->id)
+                    ->where('is_completed', true)
+                    ->whereIn('module_item_id', function ($sub) use ($courseId) {
+                        $sub->select('module_items.id')
+                            ->from('module_items')
+                            ->join('modules', 'modules.id', '=', 'module_items.module_id')
+                            ->where('modules.course_id', $courseId);
+                    })
+                    ->count();
+
+                $percent = $totalItems > 0 ? round(($completedItems / $totalItems) * 100, 2) : 0;
+                // Persist to keep other endpoints consistent
+                if ((float)$enrollment->progress_percentage !== (float)$percent) {
+                    $enrollment->progress_percentage = $percent;
+                    if ($percent >= 100 && !$enrollment->completed_at) {
+                        $enrollment->completed_at = now();
+                    }
+                    $enrollment->save();
+                }
+            } catch (\Throwable $e) {
+                // Don't break list due to a progress calc edge-case
+            }
+        }
+
         return response()->api(
             'My enrollments retrieved successfully',
             UserCourseEnrollmentResource::collection($enrollments)
