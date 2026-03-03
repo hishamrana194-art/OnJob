@@ -28,15 +28,24 @@ class QuizSubmissionController extends Controller
             'time_taken_seconds' => 'required|numeric|min:0',
         ]);
 
-        // Prevent retakes
-        $alreadyAttempted = UserQuizAttempt::where('user_id', $user->id)
+        // Enforce max_attempts (null = unlimited)
+        $attemptCount = UserQuizAttempt::where('user_id', $user->id)
             ->where('quiz_id', $quiz->id)
-            ->first();
+            ->count();
 
-        if ($alreadyAttempted) {
+        $maxAllowed = $quiz->max_attempts; // null = unlimited
+        if ($maxAllowed !== null && $attemptCount >= $maxAllowed) {
+            $lastAttempt = UserQuizAttempt::where('user_id', $user->id)
+                ->where('quiz_id', $quiz->id)
+                ->latest()
+                ->first();
             return response()->api(
-                'You have already attempted this quiz. Retakes are not allowed.',
-                $alreadyAttempted,
+                'Maximum attempts reached.',
+                [
+                    'attempt' => $lastAttempt,
+                    'attempts_used' => $attemptCount,
+                    'max_attempts' => $maxAllowed,
+                ],
                 403
             );
         }
@@ -76,7 +85,7 @@ class QuizSubmissionController extends Controller
             'user_id' => $user->id,
             'quiz_id' => $quiz->id,
             'module_id' => $quiz->module_id ?? null,
-            'attempt_number' => 1,
+            'attempt_number' => $attemptCount + 1,
             'score' => $score,
             'answers' => $answers,
             'is_passed' => $isPassed,
@@ -147,6 +156,9 @@ class QuizSubmissionController extends Controller
             'attempt' => $attempt,
             'xp' => (int)($user->fresh()->xp ?? 0),
             'coins' => (int)($user->fresh()->coins ?? 0),
+            'attempts_used' => $attemptCount + 1,
+            'max_attempts' => $quiz->max_attempts,
+            'passing_score' => $quiz->passing_score,
         ], 201);
     }
 }
