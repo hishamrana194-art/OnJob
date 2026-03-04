@@ -12,24 +12,35 @@ use Illuminate\Http\Request;
 class RewardController extends Controller
 {
     /**
-     * List all active rewards
+     * List all active rewards — includes per-user is_redeemed flag.
      */
     public function index()
     {
+        $user = auth()->user();
+
+        // Grab the IDs of rewards this user has already redeemed (one DB call)
+        $redeemedIds = UserTransaction::where('user_id', $user->id)
+            ->where('type', 'coins_spend')
+            ->where('ref_type', 'reward')
+            ->whereNotNull('ref_id')
+            ->pluck('ref_id')
+            ->map(fn($v) => (int)$v)
+            ->all();
+
         $rewards = Reward::where('is_active', true)
             ->orderBy('cost_points')
             ->get()
-            ->map(function ($r) {
+            ->map(function ($r) use ($redeemedIds) {
                 return [
-                    'id' => $r->id,
-                    'title' => $r->title,
+                    'id'          => $r->id,
+                    'title'       => $r->title,
                     'description' => $r->description,
-                    // Keeping key name for backward compatibility with the Flutter app.
-                    // Semantically: cost in COINS.
                     'cost_points' => $r->cost_points,
-                    'type' => $r->type,
-                    'stock' => $r->stock,
-                    'image' => $r->image ? asset('storage/' . $r->image) : null,
+                    'type'        => $r->type,
+                    'stock'       => $r->stock,
+                    'image'       => $r->image ? asset('storage/' . $r->image) : null,
+                    // True when this user has already spent coins on this reward
+                    'is_redeemed' => in_array((int)$r->id, $redeemedIds, true),
                 ];
             });
 
@@ -37,7 +48,9 @@ class RewardController extends Controller
     }
 
     /**
-     * Redeem a reward (spend COINS)
+     * Redeem a reward (spend COINS).
+     * Returns 409 when the reward was already redeemed so the client can
+     * display the correct feedback without ambiguity.
      */
     public function redeem(Request $request)
     {
@@ -45,11 +58,10 @@ class RewardController extends Controller
             'reward_id' => 'required|exists:rewards,id',
         ]);
 
-        $user = auth()->user();
+        $user   = auth()->user();
         $reward = Reward::findOrFail($request->reward_id);
 
-        // Idempotency: if the same reward was already redeemed (double tap / retry),
-        // return the previous redemption instead of throwing 500.
+        // ── Idempotency: same reward already redeemed by this user ────────────
         $alreadySpent = UserTransaction::where('user_id', $user->id)
             ->where('type', 'coins_spend')
             ->where('ref_type', 'reward')
@@ -62,46 +74,63 @@ class RewardController extends Controller
                 ->orderByDesc('created_at')
                 ->first();
 
+            // 409 Conflict: the client knows this is NOT a new redemption
             return response()->api('Reward already redeemed', [
-                'redemption_id' => $existing?->id,
+                'redemption_id'   => $existing?->id,
                 'remaining_coins' => (int)($user->fresh()->coins ?? 0),
-            ]);
+                'is_redeemed'     => true,
+            ], 409);
         }
 
+        // ── Guard: reward must be active ──────────────────────────────────────
         if (!$reward->is_active) {
             return response()->api('Reward is not available', null, 400);
         }
 
+        // ── Guard: enough coins ────────────────────────────────────────────────
         if ((int)($user->coins ?? 0) < (int)$reward->cost_points) {
-            return response()->api('Not enough coins', null, 400);
+            return response()->api('Not enough coins', [
+                'required' => (int)$reward->cost_points,
+                'balance'  => (int)($user->coins ?? 0),
+            ], 400);
         }
 
+        // ── Guard: stock available ─────────────────────────────────────────────
         if ($reward->stock !== null && $reward->stock <= 0) {
             return response()->api('Reward out of stock', null, 400);
         }
 
-        // Deduct coins (atomic + ledger)
-        $ok = GamificationService::spendCoins($user, (int)$reward->cost_points, 'reward_redeem', 'reward', (int)$reward->id);
+        // ── Deduct coins (atomic + idempotent ledger entry) ───────────────────
+        $ok = GamificationService::spendCoins(
+            $user,
+            (int)$reward->cost_points,
+            'reward_redeem',
+            'reward',
+            (int)$reward->id
+        );
+
         if (!$ok) {
+            // Race-condition safety: coins changed between check and decrement
             return response()->api('Not enough coins', null, 400);
         }
 
-        // Decrement stock if tracked
+        // ── Decrement stock ────────────────────────────────────────────────────
         if ($reward->stock !== null) {
             $reward->decrement('stock');
         }
 
-        // Create redemption record
+        // ── Create redemption record ──────────────────────────────────────────
         $redemption = RewardRedemption::create([
-            'user_id' => $user->id,
-            'reward_id' => $reward->id,
-            'points_spent' => $reward->cost_points, // keeping column name
-            'status' => 'pending',
+            'user_id'      => $user->id,
+            'reward_id'    => $reward->id,
+            'points_spent' => $reward->cost_points,
+            'status'       => 'pending',
         ]);
 
         return response()->api('Reward redeemed successfully', [
-            'redemption_id' => $redemption->id,
+            'redemption_id'   => $redemption->id,
             'remaining_coins' => (int)($user->fresh()->coins ?? 0),
+            'is_redeemed'     => true,
         ]);
     }
 
@@ -118,11 +147,12 @@ class RewardController extends Controller
             ->get()
             ->map(function ($r) {
                 return [
-                    'id' => $r->id,
+                    'id'           => $r->id,
+                    'reward_id'    => $r->reward_id,
                     'reward_title' => $r->reward->title ?? '',
                     'points_spent' => $r->points_spent,
-                    'status' => $r->status,
-                    'created_at' => $r->created_at->format('Y-m-d H:i:s'),
+                    'status'       => $r->status,
+                    'created_at'   => $r->created_at->format('Y-m-d H:i:s'),
                 ];
             });
 
