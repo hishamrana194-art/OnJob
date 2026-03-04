@@ -17,6 +17,8 @@ class Quiz extends Model
         'time_limit',
         'passing_score',
         'max_attempts',
+        'coins_on_pass',
+        'xp_on_pass',
         'shuffle_questions',
         'show_correct_answers',
         'is_active',
@@ -31,6 +33,8 @@ class Quiz extends Model
         'time_limit' => 'integer',
         'passing_score' => 'integer',
         'max_attempts' => 'integer',
+        'coins_on_pass' => 'integer',
+        'xp_on_pass' => 'integer',
     ];
 
     public function moduleItem()

@@ -133,9 +133,11 @@ class QuizSubmissionController extends Controller
                 );
             }
 
-            // 2) Award XP + Coins (once per quiz)
-            GamificationService::awardXp($user, GamificationService::XP_QUIZ_PASS, 'quiz_pass', 'quiz', (int)$quiz->id);
-            GamificationService::awardCoins($user, GamificationService::COINS_QUIZ_PASS, 'quiz_pass', 'quiz', (int)$quiz->id);
+            // 2) Award XP + Coins (once per quiz) — use per-quiz settings or system defaults
+            $xpToAward    = $quiz->xp_on_pass    ?? GamificationService::XP_QUIZ_PASS;
+            $coinsToAward = $quiz->coins_on_pass  ?? GamificationService::COINS_QUIZ_PASS;
+            GamificationService::awardXp($user, $xpToAward, 'quiz_pass', 'quiz', (int)$quiz->id);
+            GamificationService::awardCoins($user, $coinsToAward, 'quiz_pass', 'quiz', (int)$quiz->id);
 
             // 3) Recalculate course enrollment progress immediately
             $courseId = (int)($quiz->course_id ?? 0);
@@ -177,13 +179,16 @@ class QuizSubmissionController extends Controller
             }
         }
 
+        $freshUser = $user->fresh();
         return response()->api('Quiz submitted successfully', [
-            'attempt' => $attempt,
-            'xp' => (int)($user->fresh()->xp ?? 0),
-            'coins' => (int)($user->fresh()->coins ?? 0),
-            'attempts_used' => $attemptCount + 1,
-            'max_attempts' => $quiz->max_attempts,
-            'passing_score' => $quiz->passing_score,
+            'attempt'         => $attempt,
+            'xp'              => (int)($freshUser->xp ?? 0),
+            'coins'           => (int)($freshUser->coins ?? 0),
+            'xp_earned'       => $isPassed ? ($quiz->xp_on_pass    ?? GamificationService::XP_QUIZ_PASS) : 0,
+            'coins_earned'    => $isPassed ? ($quiz->coins_on_pass  ?? GamificationService::COINS_QUIZ_PASS) : 0,
+            'attempts_used'   => $attemptCount + 1,
+            'max_attempts'    => $quiz->max_attempts,
+            'passing_score'   => $quiz->passing_score,
         ], 201);
     }
 }

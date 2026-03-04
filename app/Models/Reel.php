@@ -22,6 +22,8 @@ class Reel extends Model
         'quiz_id',
         'is_active',
         'order',
+        'coins_on_complete',
+        'xp_on_complete',
     ];
 
     protected function casts(): array
@@ -30,6 +32,8 @@ class Reel extends Model
             'is_active' => 'boolean',
             'duration' => 'integer',
             'order' => 'integer',
+            'coins_on_complete' => 'integer',
+            'xp_on_complete' => 'integer',
         ];
     }
 
