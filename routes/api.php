@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\RewardController;
 use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReelController;
+use App\Http\Controllers\Api\SavedReelController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -214,5 +215,7 @@ Route::middleware('auth:sanctum')->prefix('notifications')->group(function () {
 Route::middleware('auth:sanctum')->prefix('reels')->group(function () {
     Route::get('/', [ReelController::class, 'index']);
     Route::post('{id}/complete', [ReelController::class, 'complete']);
+    Route::post('{id}/save', [SavedReelController::class, 'toggle']);
+    Route::get('saved', [SavedReelController::class, 'index']);
 });
 
