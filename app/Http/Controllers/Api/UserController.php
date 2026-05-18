@@ -187,6 +187,12 @@ class UserController extends Controller
             }
         }
 
+        // is_active cast to boolean
+
+        if(isset($data['is_active'])){
+            $data['is_active'] = filter_var($data['is_active'], FILTER_VALIDATE_BOOLEAN);
+        }
+
         $role = $data['role'];
         unset($data['role']);
 

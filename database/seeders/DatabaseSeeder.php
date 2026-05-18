@@ -37,7 +37,9 @@ class DatabaseSeeder extends Seeder
             QuizSeeder::class,
             QuestionSeeder::class,
             EnrollmentSeeder::class,
+            QuizAttemptSeeder::class,
             ReelSeeder::class,
+            GamificationSeeder::class,
 
             // Gamification catalogs
             RewardSeeder::class,

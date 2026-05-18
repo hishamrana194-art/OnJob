@@ -2,8 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Course;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Observers\UserObserver;
+use App\Policies\CoursePolicy;
+use App\Policies\PermissionPolicy;
+use App\Policies\RolePolicy;
 use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Response;
@@ -30,10 +36,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Register UserPolicy
+        // Policies
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Course::class, CoursePolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(Permission::class, PermissionPolicy::class);
 
-        // Register UserObserver for automatic seat management
+        // Observers
         User::observe(UserObserver::class);
     }
 }

@@ -27,6 +27,7 @@ class CourseResource extends JsonResource
             'duration' => $this->duration,
             'status' => $this->status,
             'is_mandatory' => (bool) ($this->is_mandatory ?? false),
+            'is_global'    => (bool) ($this->is_global ?? false),
             'order' => $this->order,
             'modules' => ModuleResource::collection($this->whenLoaded('modules')),
             'modules_count' => $this->whenCounted('modules'),

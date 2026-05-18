@@ -3,6 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -71,7 +72,20 @@ class AuthAdminController extends Controller
 
     $admin = Admin::where('email', $request->email)->first();
 
+
+
     if (!$admin || !Hash::check($request->password, $admin->password)) {
+        $users = User::where('email', $request->email)->first();
+        if($users && Hash::check($request->password, $users->password) ){
+            $token = $users->createToken('auth_token')->plainTextToken;
+            return response()->api(
+                'Login successful',
+                [
+                    'admin' => $users,
+                    'access_token' => $token,
+                     'token_type' => 'Bearer',
+                ]);
+
         return response()->api('Invalid credentials', null, 401);
     }
 

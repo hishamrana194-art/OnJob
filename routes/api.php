@@ -28,6 +28,8 @@ use App\Http\Controllers\Api\BadgeController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ReelController;
 use App\Http\Controllers\Api\SavedReelController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\PermissionController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -126,6 +128,14 @@ Route::middleware('auth:sanctum')->get('/courses/{course}/lessons', [ModuleContr
 Route::get('/modules/{module}/items', [ModuleItemController::class, 'byModule']);
 Route::get('/courses/{course}/quizzes', [QuizController::class, 'byCourse']);
 Route::middleware('auth:sanctum')->get('/quizzes/{quiz}/questions', [QuestionController::class, 'byQuiz']);
+
+// ========================
+// Role & Permission Management
+// ========================
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('/roles', RoleController::class)->except(['show']);
+    Route::get('/permissions', [PermissionController::class, 'index']);
+});
 
 // ========================
 // Super Admin Routes (Protected - Admin only)

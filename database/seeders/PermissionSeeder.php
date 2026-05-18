@@ -2,18 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Models\Permission;
+use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 
 class PermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        // Define all permissions
+        // ── 1. Define all platform permissions ───────────────────────────────
+        //
+        // Permissions are always system-level; only roles carry tenant scope.
+        // `courses.mark_global` is a special system-only permission — tenant
+        // roles may never be granted it (enforced in RoleController).
+
         $permissions = [
             // User Management
             'users.view',
@@ -46,19 +48,50 @@ class PermissionSeeder extends Seeder
             // Analytics
             'analytics.view',
 
+            // Roles & Permissions management
+            'roles.view',
+            'roles.create',
+            'roles.update',
+            'roles.delete',
 
+            // Global course management (course_admin only — kept is_system)
+            'courses.mark_global',
         ];
 
-        // Create all permissions
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+        foreach ($permissions as $name) {
+            $permission = Permission::firstOrCreate(
+                ['name' => $name, 'guard_name' => 'web']
+            );
+
+            // All platform-defined permissions are system-level.
+            $permission->is_system = true;
+            $permission->save();
         }
 
-        // Assign permissions to roles
-        $rolePermissions = [
-            'employer_t1' => $permissions, // Full access
+        // ── 2. Assign permissions to system roles ─────────────────────────────
 
-            'employer_t2' => [
+        $rolePermissions = [
+            'employer_admin' => [
+                'users.view',
+                'users.create',
+                'users.update',
+                'users.delete',
+                'courses.view',
+                'modules.view',
+                'quizzes.view',
+                'reports.view',
+                'reports.export',
+                'analytics.view',
+                'roles.view',
+                'roles.create',
+                'roles.update',
+                'roles.delete',
+            ],
+
+            'hr_manager' => [
+                'users.view',
+                'users.create',
+                'users.update',
                 'courses.view',
                 'modules.view',
                 'quizzes.view',
@@ -66,30 +99,25 @@ class PermissionSeeder extends Seeder
                 'reports.export',
             ],
 
-            'employer_t3' => [
+            'department_manager' => [
+                'users.view',
                 'courses.view',
                 'modules.view',
+                'quizzes.view',
+                'reports.view',
+            ],
+
+            'team_leader' => [
+                'users.view',
+                'courses.view',
+                'modules.view',
+                'quizzes.view',
             ],
 
             'employee' => [
                 'courses.view',
                 'modules.view',
                 'quizzes.view',
-            ],
-
-            'vendor_t1' => [
-                'courses.view',
-                'courses.create',
-                'courses.update',
-                'courses.delete',
-                'modules.view',
-                'modules.create',
-                'modules.update',
-                'modules.delete',
-                'quizzes.view',
-                'quizzes.create',
-                'quizzes.update',
-                'quizzes.delete',
             ],
 
             'vendor_admin' => [
@@ -112,7 +140,22 @@ class PermissionSeeder extends Seeder
                 'reports.view',
                 'reports.export',
                 'analytics.view',
-                
+                'roles.view',
+                'roles.create',
+                'roles.update',
+                'roles.delete',
+            ],
+
+            'vendor_editor' => [
+                'courses.view',
+                'courses.create',
+                'courses.update',
+                'modules.view',
+                'modules.create',
+                'modules.update',
+                'quizzes.view',
+                'quizzes.create',
+                'quizzes.update',
             ],
 
             'training_provider' => [
@@ -120,6 +163,22 @@ class PermissionSeeder extends Seeder
                 'courses.create',
                 'courses.update',
                 'courses.delete',
+                'modules.view',
+                'modules.create',
+                'modules.update',
+                'modules.delete',
+                'quizzes.view',
+                'quizzes.create',
+                'quizzes.update',
+                'quizzes.delete',
+            ],
+
+            'course_admin' => [
+                'courses.view',
+                'courses.create',
+                'courses.update',
+                'courses.delete',
+                'courses.mark_global',
                 'modules.view',
                 'modules.create',
                 'modules.update',
@@ -139,4 +198,3 @@ class PermissionSeeder extends Seeder
         }
     }
 }
-
